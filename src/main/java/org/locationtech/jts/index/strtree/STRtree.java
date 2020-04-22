@@ -1,45 +1,30 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.index.strtree;
 
-import java.io.Serializable;
-import java.util.*;
 
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.index.ItemVisitor;
+import org.locationtech.jts.index.SpatialIndex;
+import org.locationtech.jts.util.Assert;
 import org.locationtech.jts.util.PriorityQueue;
-import org.locationtech.jts.index.*;
 
 /**
  *  A query-only R-tree created using the Sort-Tile-Recursive (STR) algorithm.
@@ -64,9 +49,9 @@ public class STRtree extends AbstractSTRtree
 implements SpatialIndex, Serializable 
 {
 
-  public static final class STRtreeNode extends AbstractNode
+  private static final class STRtreeNode extends AbstractNode
   {
-    public STRtreeNode(int level)
+    private STRtreeNode(int level)
     {
       super(level);
     }
@@ -278,7 +263,33 @@ implements SpatialIndex, Serializable
     BoundablePair bp = new BoundablePair(this.getRoot(), this.getRoot(), itemDist);
     return nearestNeighbour(bp);
   }
-  
+  /**
+   * Finds k items in this tree which are the top k nearest neighbors to the given {@code item}, 
+   * using {@code itemDist} as the distance metric.
+   * A Branch-and-Bound tree traversal algorithm is used
+   * to provide an efficient search.
+   * This method implements the KNN algorithm described in the following paper:
+   * <p>
+   * Roussopoulos, Nick, Stephen Kelley, and Frédéric Vincent. "Nearest neighbor queries."
+   * ACM sigmod record. Vol. 24. No. 2. ACM, 1995.
+   * <p>
+   * The query {@code item} does <b>not</b> have to be 
+   * contained in the tree, but it does 
+   * have to be compatible with the {@code itemDist} 
+   * distance metric. 
+   * 
+   * @param env the envelope of the query item
+   * @param item the item to find the nearest neighbour of
+   * @param itemDist a distance metric applicable to the items in this tree and the query item
+   * @param k the K nearest items in kNearestNeighbour
+   * @return the K nearest items in this tree
+   */
+  public Object[] nearestNeighbour(Envelope env, Object item, ItemDistance itemDist,int k)
+  {
+    Boundable bnd = new ItemBoundable(env, item);
+    BoundablePair bp = new BoundablePair(this.getRoot(), bnd, itemDist);
+    return nearestNeighbour(bp,k);
+  }
   /**
    * Finds the item in this tree which is nearest to the given {@link Object}, 
    * using {@link ItemDistance} as the distance metric.
@@ -302,30 +313,6 @@ implements SpatialIndex, Serializable
     return nearestNeighbour(bp)[0];
   }
   
-  
-  /**
-   * Finds the item in this tree which is nearest to the given {@link Object}, 
-   * using {@link ItemDistance} as the distance metric.
-   * A Branch-and-Bound tree traversal algorithm is used
-   * to provide an efficient search.
-   * <p>
-   * The query <tt>object</tt> does <b>not</b> have to be 
-   * contained in the tree, but it does 
-   * have to be compatible with the <tt>itemDist</tt> 
-   * distance metric. 
-   * 
-   * @param env the envelope of the query item
-   * @param item the item to find the nearest neighbour of
-   * @param itemDist a distance metric applicable to the items in this tree and the query item
-   * @param k the K nearest items in KNN
-   * @return the K nearest items in this tree
-   */
-  public Object[] kNearestNeighbour(Envelope env, Object item, ItemDistance itemDist,int k)
-  {
-    Boundable bnd = new ItemBoundable(env, item);
-    BoundablePair bp = new BoundablePair(this.getRoot(), bnd, itemDist);
-    return nearestNeighbour(bp,k);
-  }
   /**
    * Finds the two nearest items from this tree 
    * and another tree,
@@ -415,15 +402,8 @@ implements SpatialIndex, Serializable
           ((ItemBoundable) minPair.getBoundable(1)).getItem()
       };
   }
-  
   private Object[] nearestNeighbour(BoundablePair initBndPair, double maxDistance, int k) 
   {
-    /*
-     * This method implements the KNN algorithm described in the following paper:
-     * Roussopoulos, Nick, Stephen Kelley, and Frédéric Vincent. "Nearest neighbor queries." ACM sigmod record. Vol. 24. No. 2. ACM, 1995.
-     * We only use the minDistance and ignore minmaxDistance.
-     */
-	  
 	double distanceLowerBound = maxDistance;
     
     // initialize internal structures
@@ -432,7 +412,7 @@ implements SpatialIndex, Serializable
     // initialize queue
     priQ.add(initBndPair);
 
-    java.util.PriorityQueue<BoundablePair> kNearestNeighbors = new java.util.PriorityQueue<BoundablePair>(k, new BoundablePairComparator(false));
+    java.util.PriorityQueue<BoundablePair> kNearestNeighbors = new java.util.PriorityQueue<BoundablePair>(k, new BoundablePairDistanceComparator(false));
 
     while (! priQ.isEmpty() && distanceLowerBound >= 0.0) {
       // pop head of queue and expand one side of pair
@@ -499,26 +479,22 @@ implements SpatialIndex, Serializable
     }
     // done - return items with min distance
 
-    Object[] result = new Object[kNearestNeighbors.size()];
-    Iterator<BoundablePair> resultIterator = kNearestNeighbors.iterator();
-    int count=0;
-    while(resultIterator.hasNext())
-    {
-    	result[count]=((ItemBoundable)resultIterator.next().getBoundable(0)).getItem();
-    	count++;
-    }
-    return result;
+    return getItems(kNearestNeighbors);
   }
-  /**
-   * This method is to find the boundaries of leaf nodes.
-   * @return Return the list of boundaries we find.
-   */
-  public List queryBoundary()
-    {
-
-      return super.queryBoundary();
-
-
-    }
-
+  private static Object[] getItems(java.util.PriorityQueue<BoundablePair> kNearestNeighbors)
+  {
+	  /** 
+	   * Iterate the K Nearest Neighbour Queue and retrieve the item from each BoundablePair
+	   * in this queue
+	   */
+	  Object[] items = new Object[kNearestNeighbors.size()];
+	  Iterator<BoundablePair> resultIterator = kNearestNeighbors.iterator();
+	  int count=0;
+	  while(resultIterator.hasNext())
+	  {
+		  items[count]=((ItemBoundable)resultIterator.next().getBoundable(0)).getItem();
+		  count++;
+	  }	
+	  return items;
+  }
 }

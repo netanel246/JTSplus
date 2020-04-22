@@ -1,34 +1,13 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
@@ -135,20 +114,6 @@ public class Envelope
    *  the maximum y-coordinate
    */
   private double maxy;
-  
-  
-  /**
-   * An object reference which can be used to carry ancillary data defined
-   * by the client.
-   */
-  private Object userData = "";
-  
-  
-  /**
-   * the original geometry of this envelope. It can be a point or a polygon.
-   */
-  private Geometry originalGeometry = null;
-  
 
   /**
    *  Creates a null <code>Envelope</code>.
@@ -319,7 +284,7 @@ public class Envelope
   }
 
   /**
-   *  Returns the <code>Envelope</code>s minimum x-value. min x > max x
+   *  Returns the <code>Envelope</code>s minimum x-value. min x &gt; max x
    *  indicates that this is a null <code>Envelope</code>.
    *
    *@return    the minimum x-coordinate
@@ -329,7 +294,7 @@ public class Envelope
   }
 
   /**
-   *  Returns the <code>Envelope</code>s maximum x-value. min x > max x
+   *  Returns the <code>Envelope</code>s maximum x-value. min x &gt; max x
    *  indicates that this is a null <code>Envelope</code>.
    *
    *@return    the maximum x-coordinate
@@ -339,7 +304,7 @@ public class Envelope
   }
 
   /**
-   *  Returns the <code>Envelope</code>s minimum y-value. min y > max y
+   *  Returns the <code>Envelope</code>s minimum y-value. min y &gt; max y
    *  indicates that this is a null <code>Envelope</code>.
    *
    *@return    the minimum y-coordinate
@@ -349,7 +314,7 @@ public class Envelope
   }
 
   /**
-   *  Returns the <code>Envelope</code>s maximum y-value. min y > max y
+   *  Returns the <code>Envelope</code>s maximum y-value. min y &gt; max y
    *  indicates that this is a null <code>Envelope</code>.
    *
    *@return    the maximum y-coordinate
@@ -551,15 +516,13 @@ public class Envelope
     return new Envelope(intMinX, intMaxX, intMinY, intMaxY);
   }
 
-
-
   /**
    *  Check if the region defined by <code>other</code>
-   *  overlaps (intersects) the region of this <code>Envelope</code>.
+   *  intersects the region of this <code>Envelope</code>.
    *
    *@param  other  the <code>Envelope</code> which this <code>Envelope</code> is
-   *          being checked for overlapping
-   *@return        <code>true</code> if the <code>Envelope</code>s overlap
+   *          being checked for intersecting
+   *@return        <code>true</code> if the <code>Envelope</code>s intersect
    */
   public boolean intersects(Envelope other) {
       if (isNull() || other.isNull()) { return false; }
@@ -567,6 +530,31 @@ public class Envelope
         other.maxx < minx ||
         other.miny > maxy ||
         other.maxy < miny);
+  }
+  /**
+   *  Check if the extent defined by two extremal points
+   *  intersects the extent of this <code>Envelope</code>.
+   *
+   *@param a a point
+   *@param b another point
+   *@return   <code>true</code> if the extents intersect
+   */
+  public boolean intersects(Coordinate a, Coordinate b) {
+    if (isNull()) { return false; }
+    
+    double envminx = (a.x < b.x) ? a.x : b.x;
+    if (envminx > maxx) return false;
+    
+    double envmaxx = (a.x > b.x) ? a.x : b.x;
+    if (envmaxx < minx) return false;
+    
+    double envminy = (a.y < b.y) ? a.y : b.y;
+    if (envminy > maxy) return false;
+    
+    double envmaxy = (a.y > b.y) ? a.y : b.y;
+    if (envmaxy < miny) return false;
+    
+    return true;
   }
   /**
    * @deprecated Use #intersects instead. In the future, #overlaps may be
@@ -579,10 +567,10 @@ public class Envelope
 
   /**
    *  Check if the point <code>p</code>
-   *  overlaps (lies inside) the region of this <code>Envelope</code>.
+   *  intersects (lies inside) the region of this <code>Envelope</code>.
    *
    *@param  p  the <code>Coordinate</code> to be tested
-   *@return        <code>true</code> if the point overlaps this <code>Envelope</code>
+   *@return <code>true</code> if the point intersects this <code>Envelope</code>
    */
   public boolean intersects(Coordinate p) {
     return intersects(p.x, p.y);
@@ -595,7 +583,7 @@ public class Envelope
   }
   /**
    *  Check if the point <code>(x, y)</code>
-   *  overlaps (lies inside) the region of this <code>Envelope</code>.
+   *  intersects (lies inside) the region of this <code>Envelope</code>.
    *
    *@param  x  the x-ordinate of the point
    *@param  y  the y-ordinate of the point
@@ -744,7 +732,6 @@ public class Envelope
       return false;
     }
     Envelope otherEnvelope = (Envelope) other;
-    if(!userData.equals(otherEnvelope.getUserData())) return false;
     if (isNull()) {
       return otherEnvelope.isNull();
     }
@@ -790,21 +777,5 @@ public class Envelope
     
     
   }
-
-public Object getUserData() {
-	return userData;
-}
-
-public void setUserData(Object userData) {
-	this.userData = userData;
-}
-
-public Geometry getOriginalGeometry() {
-	return originalGeometry;
-}
-
-public void setOriginalGeometry(Geometry originalGeometry) {
-	this.originalGeometry = originalGeometry;
-}
 }
 
