@@ -1,43 +1,26 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.index.quadtree;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.index.*;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.index.ArrayListVisitor;
+import org.locationtech.jts.index.ItemVisitor;
+import org.locationtech.jts.index.SpatialIndex;
 /**
  * A Quadtree is a spatial index structure for efficient range querying
  * of items bounded by 2D rectangles.  
@@ -59,21 +42,13 @@ import org.locationtech.jts.index.*;
  * the envelope intersection check is performed automatically.
  * <p>
  * This implementation does not require specifying the extent of the inserted
- * items beforehand.  It will automatically expand to accomodate any extent
+ * items beforehand.  It will automatically expand to accommodate any extent
  * of dataset.
  * <p>
  * This data structure is also known as an <i>MX-CIF quadtree</i>
  * following the terminology of Samet and others.
  *
  * @version 1.7
- */
-/**
- * @author sparkadmin
- *
- */
-/**
- * @author sparkadmin
- *
  */
 public class Quadtree
     implements SpatialIndex, Serializable
@@ -149,7 +124,7 @@ public class Quadtree
   public boolean isEmpty()
   {
     if (root == null) return true;
-    return false;
+    return root.isEmpty();
   }
   
   /**
@@ -263,26 +238,5 @@ public class Quadtree
     if (delY < minExtent && delY > 0.0)
       minExtent = delY;
   }
-  
-/**
- * This method is to find the boundaries of leaf nodes. Note that:
- * this quad-tree may have items stored on its non-leaf nodes. Thus
- * boundaries returned by this method cannot cover all items.
- * @return Return the list of boundaries we find.
- */
-public List queryBoundary()
-  {
-  	List<Envelope> grids=new ArrayList<Envelope>();
-    ArrayListVisitor visitor = new ArrayListVisitor();
-    root.queryBoundary(new Envelope(0.0,0.0,0.0,0.0),visitor);
-    grids=visitor.getItems();
-    
-  	return grids;
-  }
-
-  public Root getRoot(){
-    return root;
-  }
-
 
 }

@@ -1,55 +1,39 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
 
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.geom.util.*;
+import org.locationtech.jts.algorithm.Centroid;
+import org.locationtech.jts.algorithm.ConvexHull;
+import org.locationtech.jts.algorithm.InteriorPoint;
+import org.locationtech.jts.geom.util.GeometryCollectionMapper;
+import org.locationtech.jts.geom.util.GeometryMapper;
 import org.locationtech.jts.io.WKTWriter;
-import org.locationtech.jts.operation.*;
+import org.locationtech.jts.operation.IsSimpleOp;
 import org.locationtech.jts.operation.buffer.BufferOp;
 import org.locationtech.jts.operation.distance.DistanceOp;
 import org.locationtech.jts.operation.linemerge.LineMerger;
 import org.locationtech.jts.operation.overlay.OverlayOp;
-import org.locationtech.jts.operation.union.UnaryUnionOp;
 import org.locationtech.jts.operation.overlay.snap.SnapIfNeededOverlayOp;
-import org.locationtech.jts.operation.predicate.RectangleIntersects;
 import org.locationtech.jts.operation.predicate.RectangleContains;
+import org.locationtech.jts.operation.predicate.RectangleIntersects;
 import org.locationtech.jts.operation.relate.RelateOp;
+import org.locationtech.jts.operation.union.UnaryUnionOp;
 import org.locationtech.jts.operation.valid.IsValidOp;
 import org.locationtech.jts.util.Assert;
+
 
 /**
  * A representation of a planar, linear vector geometry.
@@ -172,15 +156,14 @@ public abstract class Geometry
 {
   private static final long serialVersionUID = 8763622679187376702L;
     
-  private static final Class[] sortedClasses = new Class[] { 
-    Point.class, 
-    MultiPoint.class,
-    LineString.class, 
-    LinearRing.class, 
-    MultiLineString.class,
-    Polygon.class, 
-    MultiPolygon.class, 
-    GeometryCollection.class };  
+  static final int SORTINDEX_POINT = 0;
+  static final int SORTINDEX_MULTIPOINT = 1;
+  static final int SORTINDEX_LINESTRING = 2;
+  static final int SORTINDEX_LINEARRING = 3;
+  static final int SORTINDEX_MULTILINESTRING = 4;
+  static final int SORTINDEX_POLYGON = 5;
+  static final int SORTINDEX_MULTIPOLYGON = 6;
+  static final int SORTINDEX_GEOMETRYCOLLECTION = 7;
   
   private final static GeometryComponentFilter geometryChangedFilter = new GeometryComponentFilter() {
     public void filter(Geometry geom) {
@@ -207,7 +190,7 @@ public abstract class Geometry
    * An object reference which can be used to carry ancillary data defined
    * by the client.
    */
-  private Object userData = "";
+  private Object userData = null;
 
   /**
    * Creates a new <code>Geometry</code> via the specified GeometryFactory.
@@ -415,7 +398,7 @@ public abstract class Geometry
    * <li>Zero-dimensional geometries (points) are simple iff they have no
    * repeated points.
    * <li>Empty <code>Geometry</code>s are always simple.
-   * <ul>
+   * </ul>
    *
    * @return <code>true</code> if this <code>Geometry</code> is simple
    * @see #isValid
@@ -532,7 +515,7 @@ public abstract class Geometry
   public Point getCentroid()
   {
     if (isEmpty()) 
-      return factory.createPoint((Coordinate) null);
+      return factory.createPoint();
     Coordinate centPt = Centroid.getCentroid(this);
     return createPointFromInternalCoord(centPt, this);
   }
@@ -549,23 +532,7 @@ public abstract class Geometry
    */
   public Point getInteriorPoint()
   {
-    if (isEmpty()) 
-      return factory.createPoint((Coordinate) null);
-    Coordinate interiorPt = null;
-    int dim = getDimension();
-    if (dim == 0) {
-      InteriorPointPoint intPt = new InteriorPointPoint(this);
-      interiorPt = intPt.getInteriorPoint();
-    }
-    else if (dim == 1) {
-      InteriorPointLine intPt = new InteriorPointLine(this);
-      interiorPt = intPt.getInteriorPoint();
-    }
-    else {
-      InteriorPointArea intPt = new InteriorPointArea(this);
-      interiorPt = intPt.getInteriorPoint();
-    }
-    return createPointFromInternalCoord(interiorPt, this);
+    return InteriorPoint.getInteriorPoint(this);
   }
 
   /**
@@ -777,6 +744,16 @@ public abstract class Geometry
     if (g.isRectangle()) {
       return RectangleIntersects.intersects((Polygon) g, this);
     }
+    if (isGeometryCollection() || g.isGeometryCollection()) {
+      for (int i = 0 ; i < getNumGeometries() ; i++) {
+        for (int j = 0 ; j < g.getNumGeometries() ; j++) {
+          if (getGeometryN(i).intersects(g.getGeometryN(j))) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
     // general case
     return relate(g).isIntersects();
   }
@@ -828,7 +805,7 @@ public abstract class Geometry
    * An implication of the definition is that
    * "The boundary of a Geometry is not within the Geometry".
    * In other words, if a geometry A is a subset of
-   * the points in the boundary of a geomtry B, <code>A.within(B) = false</code>
+   * the points in the boundary of a geometry B, <code>A.within(B) = false</code>
    * (As a concrete example, take A to be a LineString which lies in the boundary of a Polygon B.)
    * For a predicate with similar behaviour but avoiding 
    * this subtle limitation, see {@link #coveredBy}.
@@ -872,7 +849,17 @@ public abstract class Geometry
    * @see Geometry#covers
    */
   public boolean contains(Geometry g) {
-    // short-circuit test
+    // optimization - lower dimension cannot contain areas
+    if (g.getDimension() == 2 && getDimension() < 2) {
+      return false;
+    }
+    // optimization - P cannot contain a non-zero-length L
+    // Note that a point can contain a zero-length lineal geometry, 
+    // since the line has no boundary due to Mod-2 Boundary Rule
+    if (g.getDimension() == 1 && getDimension() < 1 && g.getLength() > 0.0) {
+      return false;
+    }
+    // optimization - envelope test
     if (! getEnvelopeInternal().contains(g.getEnvelopeInternal()))
       return false;
     // optimization for rectangle arguments
@@ -946,7 +933,16 @@ public abstract class Geometry
    * @see Geometry#coveredBy
    */
   public boolean covers(Geometry g) {
-    // short-circuit test
+    // optimization - lower dimension cannot cover areas
+    if (g.getDimension() == 2 && getDimension() < 2) {
+      return false;
+    }
+    // optimization - P cannot cover a non-zero-length L
+    // Note that a point can cover a zero-length lineal geometry
+    if (g.getDimension() == 1 && getDimension() < 1 && g.getLength() > 0.0) {
+      return false;
+    }
+    // optimization - envelope test
     if (! getEnvelopeInternal().covers(g.getEnvelopeInternal()))
       return false;
     // optimization for rectangle arguments
@@ -1049,7 +1045,6 @@ public abstract class Geometry
    */
   public boolean equals(Geometry g) {
     if (g == null) return false;
-    if(!userData.equals(g.getUserData())) return false;
     return equalsTopo(g);
   }
 
@@ -1103,7 +1098,7 @@ public abstract class Geometry
    * Note that to produce the expected result the input geometries
    * should be in normal form.  It is the caller's 
    * responsibility to perform this where required
-   * (using {@link Geometry#norm()
+   * (using {@link Geometry#norm()}
    * or {@link #normalize()} as appropriate).
    * 
    * @param o the Object to compare
@@ -1118,7 +1113,6 @@ public abstract class Geometry
   {
     if (! (o instanceof Geometry)) return false;
     Geometry g = (Geometry) o;
-    if(!userData.equals(g.getUserData())) return false;
     return equalsExact(g);
   }
   
@@ -1133,7 +1127,6 @@ public abstract class Geometry
   }
   
   public String toString() {
-	if(this.userData!=null && this.userData!="") return toText()+"\t"+this.userData;
     return toText();
   }
 
@@ -1299,7 +1292,7 @@ public abstract class Geometry
    * The intersection of two geometries of different dimension produces a result
    * geometry of dimension less than or equal to the minimum dimension of the input
    * geometries. 
-   * The result geometry may be a heterogenous {@link GeometryCollection}.
+   * The result geometry may be a heterogeneous {@link GeometryCollection}.
    * If the result is empty, it is an atomic geometry
    * with the dimension of the lowest input dimension.
    * <p>
@@ -1323,21 +1316,22 @@ public abstract class Geometry
       return OverlayOp.createEmptyResult(OverlayOp.INTERSECTION, this, other, factory);
 
     // compute for GCs
+    // (An inefficient algorithm, but will work)
+    // TODO: improve efficiency of computation for GCs
     if (this.isGeometryCollection()) {
       final Geometry g2 = other;
       return GeometryCollectionMapper.map(
           (GeometryCollection) this,
           new GeometryMapper.MapOp() {
-        public Geometry map(Geometry g) {
-          return g.intersection(g2);
-        }
+            public Geometry map(Geometry g) {
+              return g.intersection(g2);
+            }
       });
     }
-//    if (isGeometryCollection(other))
-//      return other.intersection(this);
-    
-    checkNotGeometryCollection(this);
-    checkNotGeometryCollection(other);
+
+    // No longer needed since GCs are handled by previous code
+    //checkNotGeometryCollection(this);
+    //checkNotGeometryCollection(other);
     return SnapIfNeededOverlayOp.overlayOp(this, other, OverlayOp.INTERSECTION);
   }
 
@@ -1349,7 +1343,7 @@ public abstract class Geometry
    * The union of two geometries of different dimension produces a result
    * geometry of dimension equal to the maximum dimension of the input
    * geometries. 
-   * The result geometry may be a heterogenous
+   * The result geometry may be a heterogeneous
    * {@link GeometryCollection}.
    * If the result is empty, it is an atomic geometry
    * with the dimension of the highest input dimension.
@@ -1383,8 +1377,8 @@ public abstract class Geometry
         return OverlayOp.createEmptyResult(OverlayOp.UNION, this, other, factory);
         
     // special case: if either input is empty ==> other input
-      if (this.isEmpty()) return (Geometry) other.clone();
-      if (other.isEmpty()) return (Geometry) clone();
+      if (this.isEmpty()) return other.copy();
+      if (other.isEmpty()) return copy();
     }
     
     // TODO: optimize if envelopes of geometries do not intersect
@@ -1415,7 +1409,7 @@ public abstract class Geometry
   {
     // special case: if A.isEmpty ==> empty; if B.isEmpty ==> A
     if (this.isEmpty()) return OverlayOp.createEmptyResult(OverlayOp.DIFFERENCE, this, other, factory);
-    if (other.isEmpty()) return (Geometry) clone();
+    if (other.isEmpty()) return copy();
 
     checkNotGeometryCollection(this);
     checkNotGeometryCollection(other);
@@ -1423,7 +1417,7 @@ public abstract class Geometry
   }
 
   /**
-   * Computes a <coe>Geometry </code> representing the closure of the point-set 
+   * Computes a <code>Geometry </code> representing the closure of the point-set
    * which is the union of the points in this <code>Geometry</code> which are not 
    * contained in the <code>other</code> Geometry,
    * with the points in the <code>other</code> Geometry not contained in this
@@ -1449,8 +1443,8 @@ public abstract class Geometry
         return OverlayOp.createEmptyResult(OverlayOp.SYMDIFFERENCE, this, other, factory);
         
     // special case: if either input is empty ==> result = other arg
-      if (this.isEmpty()) return (Geometry) other.clone();
-      if (other.isEmpty()) return (Geometry) clone();
+      if (this.isEmpty()) return other.copy();
+      if (other.isEmpty()) return copy();
     }
 
     checkNotGeometryCollection(this);
@@ -1620,6 +1614,7 @@ public abstract class Geometry
    * their internal data.  Overrides should call this method first.
    *
    * @return a clone of this instance
+   * @deprecated
    */
   public Object clone() {
     try {
@@ -1632,7 +1627,32 @@ public abstract class Geometry
       return null;
     }
   }
-
+  
+  /**
+   * Creates a deep copy of this {@link Geometry} object.
+   * Coordinate sequences contained in it are copied.
+   * All instance fields are copied (i.e. the <tt>SRID</tt> and <tt>userData</tt>).
+   * <p>
+   * <b>NOTE:</b> the userData object reference (if present) is copied,
+   * but the value itself is not copied.
+   * If a deep copy is required this must be performed by the caller. 
+   *
+   * @return a deep copy of this geometry
+   */
+  public Geometry copy() {
+    Geometry copy = copyInternal();
+    copy.SRID = this.SRID;
+    copy.userData = this.userData; 
+    return copy;
+  }
+  
+  /**
+   * An internal method to copy subclass-specific geometry data.
+   * 
+   * @return a copy of the target geometry object.
+   */
+  protected abstract Geometry copyInternal();
+  
   /**
    *  Converts this <code>Geometry</code> to <b>normal form</b> (or <b>
    *  canonical form</b> ). Normal form is a unique representation for <code>Geometry</code>
@@ -1659,7 +1679,7 @@ public abstract class Geometry
    */
   public Geometry norm()
   {
-    Geometry copy = (Geometry) clone();
+    Geometry copy = copy();
     copy.normalize();
     return copy;
   }
@@ -1692,8 +1712,8 @@ public abstract class Geometry
    */
   public int compareTo(Object o) {
     Geometry other = (Geometry) o;
-    if (getClassSortIndex() != other.getClassSortIndex()) {
-      return getClassSortIndex() - other.getClassSortIndex();
+    if (getSortIndex() != other.getSortIndex()) {
+      return getSortIndex() - other.getSortIndex();
     }
     if (isEmpty() && other.isEmpty()) {
       return 0;
@@ -1739,8 +1759,8 @@ public abstract class Geometry
    */
   public int compareTo(Object o, CoordinateSequenceComparator comp) {
     Geometry other = (Geometry) o;
-    if (getClassSortIndex() != other.getClassSortIndex()) {
-      return getClassSortIndex() - other.getClassSortIndex();
+    if (getSortIndex() != other.getSortIndex()) {
+      return getSortIndex() - other.getSortIndex();
     }
     if (isEmpty() && other.isEmpty()) {
       return 0;
@@ -1771,17 +1791,16 @@ public abstract class Geometry
   }
 
   /**
-   *  Throws an exception if <code>g</code>'s class is <code>GeometryCollection</code>
-   *  . (Its subclasses do not trigger an exception).
+   *  Throws an exception if <code>g</code>'s type is a <code>GeometryCollection</code>.
+   *  (Its subclasses do not trigger an exception).
    *
-   *@param  g                          the <code>Geometry</code> to check
+   *@param  g the <code>Geometry</code> to check
    *@throws  IllegalArgumentException  if <code>g</code> is a <code>GeometryCollection</code>
    *      but not one of its subclasses
    */
-  protected void checkNotGeometryCollection(Geometry g) {
-    //Don't use instanceof because we want to allow subclasses
-    if (g.getClass().getName().equals("org.locationtech.jts.geom.GeometryCollection")) {
-      throw new IllegalArgumentException("This method does not support GeometryCollection arguments");
+  protected static void checkNotGeometryCollection(Geometry g) {
+    if (g.isGeometryCollection()) {
+      throw new IllegalArgumentException("Operation does not support GeometryCollection arguments");
     }
   }
 
@@ -1789,11 +1808,11 @@ public abstract class Geometry
    * Tests whether this is an instance of a general {@link GeometryCollection},
    * rather than a homogeneous subclass.
    * 
-   * @return true if this is a hetereogeneous GeometryCollection
+   * @return true if this is a heterogeneous GeometryCollection
    */
   protected boolean isGeometryCollection()
   {
-    return getClass().equals(org.locationtech.jts.geom.GeometryCollection.class);
+    return getSortIndex() == SORTINDEX_GEOMETRYCOLLECTION;
   }
 
   /**
@@ -1871,15 +1890,8 @@ public abstract class Geometry
     if (tolerance == 0) { return a.equals(b); }
     return a.distance(b) <= tolerance;
   }
-
-  private int getClassSortIndex() {
-		for (int i = 0; i < sortedClasses.length; i++) {
-			if (sortedClasses[i].isInstance(this))
-				return i;
-		}
-		Assert.shouldNeverReachHere("Class not supported: " + this.getClass());
-		return -1;
-	}
+  
+  abstract protected int getSortIndex();
 
   private Point createPointFromInternalCoord(Coordinate coord, Geometry exemplar)
   {

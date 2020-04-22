@@ -1,44 +1,28 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.index.strtree;
 
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.index.ItemVisitor;
-import org.locationtech.jts.util.*;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+
+import org.locationtech.jts.index.ItemVisitor;
+import org.locationtech.jts.util.Assert;
 
 /**
  * Base class for STRtree and SIRtree. STR-packed R-trees are described in:
@@ -177,38 +161,25 @@ public abstract class AbstractSTRtree implements Serializable {
     return createHigherLevels(parentBoundables, level + 1);
   }
 
+  /**
+   * Gets the root node of the tree.
+   * 
+   * @return the root node
+   */
   public AbstractNode getRoot() 
   {
     build();
     return root; 
   }
 
-    public void setRoot(AbstractNode root) {
-        this.root = root;
-    }
-
-    /**
-   * Returns the maximum number of child nodes that a node may have
+  /**
+   * Returns the maximum number of child nodes that a node may have.
+   * 
+   * @return the node capacity
    */
   public int getNodeCapacity() { return nodeCapacity; }
 
-
-  public ArrayList getItemBoundables() { return itemBoundables; }
-
-
-    public void setItemBoundables(ArrayList itemBoundables) {
-        this.itemBoundables = itemBoundables;
-    }
-
-    public boolean isBuilt() {
-        return built;
-    }
-
-    public void setBuilt(boolean built) {
-        this.built = built;
-    }
-
-    /**
+  /**
    * Tests whether the index contains any items.
    * This method does not build the index,
    * so items can still be inserted after it has been called.
@@ -283,7 +254,7 @@ public abstract class AbstractSTRtree implements Serializable {
       return matches;
     }
     if (getIntersectsOp().intersects(root.getBounds(), searchBounds)) {
-      query(searchBounds, root, matches);
+      queryInternal(searchBounds, root, matches);
     }
     return matches;
   }
@@ -299,7 +270,7 @@ public abstract class AbstractSTRtree implements Serializable {
       return;
     }
     if (getIntersectsOp().intersects(root.getBounds(), searchBounds)) {
-      query(searchBounds, root, visitor);
+      queryInternal(searchBounds, root, visitor);
     }
   }
 
@@ -310,7 +281,7 @@ public abstract class AbstractSTRtree implements Serializable {
    */
   protected abstract IntersectsOp getIntersectsOp();
 
-  private void query(Object searchBounds, AbstractNode node, List matches) {
+  private void queryInternal(Object searchBounds, AbstractNode node, List matches) {
     List childBoundables = node.getChildBoundables();
     for (int i = 0; i < childBoundables.size(); i++) {
       Boundable childBoundable = (Boundable) childBoundables.get(i);
@@ -318,7 +289,7 @@ public abstract class AbstractSTRtree implements Serializable {
         continue;
       }
       if (childBoundable instanceof AbstractNode) {
-        query(searchBounds, (AbstractNode) childBoundable, matches);
+        queryInternal(searchBounds, (AbstractNode) childBoundable, matches);
       }
       else if (childBoundable instanceof ItemBoundable) {
         matches.add(((ItemBoundable)childBoundable).getItem());
@@ -329,7 +300,7 @@ public abstract class AbstractSTRtree implements Serializable {
     }
   }
 
-  private void query(Object searchBounds, AbstractNode node, ItemVisitor visitor) {
+  private void queryInternal(Object searchBounds, AbstractNode node, ItemVisitor visitor) {
     List childBoundables = node.getChildBoundables();
     for (int i = 0; i < childBoundables.size(); i++) {
       Boundable childBoundable = (Boundable) childBoundables.get(i);
@@ -337,7 +308,7 @@ public abstract class AbstractSTRtree implements Serializable {
         continue;
       }
       if (childBoundable instanceof AbstractNode) {
-        query(searchBounds, (AbstractNode) childBoundable, visitor);
+        queryInternal(searchBounds, (AbstractNode) childBoundable, visitor);
       }
       else if (childBoundable instanceof ItemBoundable) {
         visitor.visitItem(((ItemBoundable)childBoundable).getItem());
@@ -482,58 +453,5 @@ public abstract class AbstractSTRtree implements Serializable {
   }
 
   protected abstract Comparator getComparator();
-/**
- * This function traverses the boundaries of all leaf nodes.
- * This function should be called after all insertions.
- * @return The list of lea nodes boundaries
- */
-protected List queryBoundary() 
-  {
-	    build();
-	    List boundaries = new ArrayList();
-	    if (isEmpty()) {
-	      //Assert.isTrue(root.getBounds() == null);
-	    //If the root is empty, we stop traversing. This should not happen.
-	      return boundaries;
-	    }
-	   
-	    queryBoundary(root, boundaries);
-	    
-	    return boundaries;
-  }
-/**
- * This function is to traverse the children of the root.
- * @param node
- * @param boundaries
- */
-private void queryBoundary(AbstractNode node, List boundaries) {
-    List childBoundables = node.getChildBoundables();
-    boolean flagLeafnode=true;
-    for (int i = 0; i < childBoundables.size(); i++) {
-      Boundable childBoundable = (Boundable) childBoundables.get(i);
-      if (childBoundable instanceof AbstractNode) {
-    	  //We find this is not a leaf node.
-    	flagLeafnode=false;
-    	break;
-        
-      }
-    }
-    if(flagLeafnode==true)
-    {
-    	boundaries.add((Envelope)node.getBounds());
-    	return;
-    }
-    else
-    {
-    	for (int i = 0; i < childBoundables.size(); i++) 
-    	{
-    		Boundable childBoundable = (Boundable) childBoundables.get(i);
-    		if (childBoundable instanceof AbstractNode) 
-    		{
-    			queryBoundary((AbstractNode) childBoundable, boundaries);
-    		}
-    		
-    	}
-    }
-  }
+
 }
