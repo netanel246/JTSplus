@@ -1,6 +1,18 @@
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+
 package org.locationtech.jts.edgegraph;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geomgraph.Quadrant;
 import org.locationtech.jts.util.Assert;
@@ -259,7 +271,7 @@ public class HalfEdge {
    * it is trivial to determine which edge has a greater angle.
    * 
    * <li>if the vectors lie in the same quadrant, the 
-   * {@link CGAlgorithms#computeOrientation(Coordinate, Coordinate, Coordinate)} function
+   * {@link Orientation#computeOrientation(Coordinate, Coordinate, Coordinate)} function
    * can be used to determine the relative orientation of the vectors.
    * </ul>
    */
@@ -283,7 +295,7 @@ public class HalfEdge {
     // vectors are in the same quadrant
     // Check relative orientation of direction vectors
     // this is > e if it is CCW of e
-    return CGAlgorithms.computeOrientation(e.orig, e.dest(), dest());
+    return Orientation.index(e.orig, e.dest(), dest());
   }
 
   /**
@@ -332,7 +344,7 @@ public class HalfEdge {
 
   /**
    * Finds the first node previous to this edge, if any.
-   * If no such node exists (i.e the edge is part of a ring)
+   * If no such node exists (i.e. the edge is part of a ring)
    * then null is returned.
    * 
    * @return an edge originating at the node prior to this edge, if any,

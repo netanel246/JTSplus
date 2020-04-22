@@ -1,50 +1,45 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm.locate;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
 
 import org.locationtech.jts.algorithm.RayCrossingCounter;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.geom.util.*;
-import org.locationtech.jts.index.*;
-import org.locationtech.jts.index.intervalrtree.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.Polygonal;
+import org.locationtech.jts.geom.util.LinearComponentExtracter;
+import org.locationtech.jts.index.ArrayListVisitor;
+import org.locationtech.jts.index.ItemVisitor;
+import org.locationtech.jts.index.intervalrtree.SortedPackedIntervalRTree;
+
 
 /**
  * Determines the {@link Location} of {@link Coordinate}s relative to
- * a {@link Polygonal} geometry, using indexing for efficiency.
+ * an areal geometry, using indexing for efficiency.
  * This algorithm is suitable for use in cases where
  * many points will be tested against a given area.
+ * <p>
+ * The Location is computed precisely, in that points
+ * located on the geometry boundary or segments will 
+ * return {@link Location.BOUNDARY}.
+ * <p>
+ * {@link Polygonal} and {@link LinearRing} geometries
+ * are supported.
  * 
  * Thread-safe and immutable.
  *
@@ -57,13 +52,16 @@ public class IndexedPointInAreaLocator
   private final IntervalIndexedGeometry index;
   
   /**
-   * Creates a new locator for a given {@link Geometry}
+   * Creates a new locator for a given {@link Geometry}.
+   * {@link Polygonal} and {@link LinearRing} geometries
+   * are supported.
+   * 
    * @param g the Geometry to locate in
    */
   public IndexedPointInAreaLocator(Geometry g)
   {
-    if (! (g instanceof Polygonal))
-      throw new IllegalArgumentException("Argument must be Polygonal");
+    if (! (g instanceof Polygonal  || g instanceof LinearRing))
+      throw new IllegalArgumentException("Argument must be Polygonal or LinearRing");
     index = new IntervalIndexedGeometry(g);
   }
     

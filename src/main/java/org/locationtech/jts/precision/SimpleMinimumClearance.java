@@ -1,38 +1,17 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Martin Davis.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.precision;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.Distance;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateFilter;
 import org.locationtech.jts.geom.CoordinateSequence;
@@ -97,7 +76,7 @@ public class SimpleMinimumClearance
     if (minClearancePts != null) return;
     minClearancePts = new Coordinate[2];
     minClearance = Double.MAX_VALUE;
-    inputGeom.apply(new VertexCoordinateFilter());
+    inputGeom.apply(new VertexCoordinateFilter(this));
   }
   
   private void updateClearance(double candidateValue, Coordinate p0, Coordinate p1)
@@ -120,26 +99,30 @@ public class SimpleMinimumClearance
     }
   }
   
-  private class VertexCoordinateFilter 
+  private static class VertexCoordinateFilter 
   implements CoordinateFilter
   {
-    public VertexCoordinateFilter()
+    SimpleMinimumClearance smc;
+    
+    public VertexCoordinateFilter(SimpleMinimumClearance smc)
     {
-      
+      this.smc = smc;
     }
     
     public void filter(Coordinate coord) {
-      inputGeom.apply(new ComputeMCCoordinateSequenceFilter(coord));
+      smc.inputGeom.apply(new ComputeMCCoordinateSequenceFilter(smc, coord));
     }
   }
   
-  private class ComputeMCCoordinateSequenceFilter 
+  private static class ComputeMCCoordinateSequenceFilter 
   implements CoordinateSequenceFilter 
   {
+    SimpleMinimumClearance smc;
     private Coordinate queryPt;
     
-    public ComputeMCCoordinateSequenceFilter(Coordinate queryPt)
+    public ComputeMCCoordinateSequenceFilter(SimpleMinimumClearance smc, Coordinate queryPt)
     {
+      this.smc = smc;
       this.queryPt = queryPt;
     }
     public void filter(CoordinateSequence seq, int i) {
@@ -156,7 +139,7 @@ public class SimpleMinimumClearance
     {
       double vertexDist = vertex.distance(queryPt);
       if (vertexDist > 0) {
-        updateClearance(vertexDist, queryPt, vertex);
+        smc.updateClearance(vertexDist, queryPt, vertex);
       }
     }
     
@@ -164,9 +147,9 @@ public class SimpleMinimumClearance
     {
         if (queryPt.equals2D(seg0) || queryPt.equals2D(seg1))
           return;
-        double segDist = CGAlgorithms.distancePointLine(queryPt, seg1, seg0);
+        double segDist = Distance.pointToSegment(queryPt, seg1, seg0);
         if (segDist > 0) 
-          updateClearance(segDist, queryPt, seg1, seg0);
+          smc.updateClearance(segDist, queryPt, seg1, seg0);
     }
     
     public boolean isDone() {

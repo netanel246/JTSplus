@@ -1,39 +1,24 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 
 /**
  * Computes the minimum diameter of a {@link Geometry}.
@@ -93,7 +78,7 @@ public class MinimumDiameter
   /**
    * Compute a minimum diameter for a given {@link Geometry}.
    *
-   * @param geom a Geometry
+   * @param inputGeom a Geometry
    */
   public MinimumDiameter(Geometry inputGeom)
   {
@@ -107,7 +92,7 @@ public class MinimumDiameter
    * (e.g. a convex Polygon or LinearRing,
    * or a two-point LineString, or a Point).
    *
-   * @param geom a Geometry which is convex
+   * @param inputGeom a Geometry which is convex
    * @param isConvex <code>true</code> if the input geometry is convex
    */
   public MinimumDiameter(Geometry inputGeom, boolean isConvex)
@@ -160,7 +145,7 @@ public class MinimumDiameter
 
     // return empty linestring if no minimum width calculated
     if (minWidthPt == null)
-      return inputGeom.getFactory().createLineString((Coordinate[])null);
+      return inputGeom.getFactory().createLineString();
 
     Coordinate basePt = minBaseSeg.project(minWidthPt);
     return inputGeom.getFactory().createLineString(new Coordinate[] { basePt, minWidthPt } );
@@ -327,7 +312,7 @@ public class MinimumDiameter
     
     LinearRing shell = inputGeom.getFactory().createLinearRing(
         new Coordinate[] { p0, p1, p2, p3, p0 });
-    return inputGeom.getFactory().createPolygon(shell, null);
+    return inputGeom.getFactory().createPolygon(shell);
 
   }
   

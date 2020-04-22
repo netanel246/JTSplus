@@ -1,38 +1,20 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.Polygonal;
 
 /**
  * Counts the number of segments crossed by a horizontal ray extending to the right
@@ -56,6 +38,10 @@ import org.locationtech.jts.geom.*;
  * which can be a priori determined to <i>not</i> touch the ray
  * (i.e. by a test of their bounding box or Y-extent) 
  * do not need to be counted.  This allows for optimization by indexing.
+ * <p>
+ * This implementation uses the extended-precision orientation test,
+ * to provide maximum robustness and consistency within 
+ * other algorithms.
  * 
  * @author Martin Davis
  *
@@ -168,34 +154,19 @@ public class RayCrossingCounter
 		 */
 		if (((p1.y > p.y) && (p2.y <= p.y)) 
 				|| ((p2.y > p.y) && (p1.y <= p.y))) {
-			// translate the segment so that the test point lies on the origin
-			double x1 = p1.x - p.x;
-			double y1 = p1.y - p.y;
-			double x2 = p2.x - p.x;
-			double y2 = p2.y - p.y;
-
-			/**
-			 * The translated segment straddles the x-axis. Compute the sign of the
-			 * ordinate of intersection with the x-axis. (y2 != y1, so denominator
-			 * will never be 0.0)
-			 */
-			// double xIntSign = RobustDeterminant.signOfDet2x2(x1, y1, x2, y2) / (y2
-			// - y1);
-			// MD - faster & more robust computation?
-			double xIntSign = RobustDeterminant.signOfDet2x2(x1, y1, x2, y2);
-			if (xIntSign == 0.0) {
-				isPointOnSegment = true;
-				return;
-			}
-			if (y2 < y1)
-				xIntSign = -xIntSign;
-			// xsave = xInt;
-
-      //System.out.println("xIntSign(" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + " = " + xIntSign);
-			// The segment crosses the ray if the sign is strictly positive.
-			if (xIntSign > 0.0) {
-				crossingCount++;
-			}
+      int orient = Orientation.index(p1, p2, p);
+      if (orient == Orientation.COLLINEAR) {
+        isPointOnSegment = true;
+        return;
+      }
+      // Re-orient the result if needed to ensure effective segment direction is upwards
+      if (p2.y < p1.y) {
+        orient = -orient;
+      }
+      // The upward segment crosses the ray if the test point lies to the left (CCW) of the segment.
+      if (orient == Orientation.LEFT) {
+        crossingCount++;
+      }
 		}
 	}
 	

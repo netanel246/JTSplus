@@ -1,43 +1,24 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
-import java.util.*;
 import java.io.Serializable;
-import org.locationtech.jts.geom.impl.*;
-import org.locationtech.jts.geom.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+
+import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
+import org.locationtech.jts.geom.util.GeometryEditor;
 import org.locationtech.jts.util.Assert;
 
 /**
@@ -221,7 +202,7 @@ public class GeometryFactory
    * <li>null : returns an empty {@link Point}
    * <li>a point : returns a non-empty {@link Point}
    * <li>a line : returns a two-point {@link LineString}
-   * <li>a rectangle : returns a {@link Polygon}> whose points are (minx, miny),
+   * <li>a rectangle : returns a {@link Polygon} whose points are (minx, miny),
    *  (minx, maxy), (maxx, maxy), (maxx, miny), (minx, miny).
    * </ul>
    * 
@@ -234,7 +215,7 @@ public class GeometryFactory
   {
   	// null envelope - return empty point geometry
     if (envelope.isNull()) {
-      return createPoint((CoordinateSequence)null);
+      return createPoint();
     }
     
     // point?
@@ -271,6 +252,10 @@ public class GeometryFactory
     return precisionModel;
   }
 
+  public Point createPoint() {
+	return createPoint(getCoordinateSequenceFactory().create(new Coordinate[]{}));
+  }
+  
   /**
    * Creates a Point using the given Coordinate.
    * A null Coordinate creates an empty Geometry.
@@ -292,6 +277,10 @@ public class GeometryFactory
   public Point createPoint(CoordinateSequence coordinates) {
   	return new Point(coordinates, this);
   }
+  
+  public MultiLineString createMultiLineString() {
+    return new MultiLineString(null, this);
+  }
 
   /**
    * Creates a MultiLineString using the given LineStrings; a null or empty
@@ -303,6 +292,10 @@ public class GeometryFactory
   public MultiLineString createMultiLineString(LineString[] lineStrings) {
   	return new MultiLineString(lineStrings, this);
   }
+  
+  public GeometryCollection createGeometryCollection() {
+    return new GeometryCollection(null, this);
+  }
 
   /**
    * Creates a GeometryCollection using the given Geometries; a null or empty
@@ -313,6 +306,10 @@ public class GeometryFactory
    */
   public GeometryCollection createGeometryCollection(Geometry[] geometries) {
   	return new GeometryCollection(geometries, this);
+  }
+  
+  public MultiPolygon createMultiPolygon() {
+    return new MultiPolygon(null, this);
   }
 
   /**
@@ -328,6 +325,10 @@ public class GeometryFactory
    */
   public MultiPolygon createMultiPolygon(Polygon[] polygons) {
     return new MultiPolygon(polygons, this);
+  }
+  
+  public LinearRing createLinearRing() {
+    return createLinearRing(getCoordinateSequenceFactory().create(new Coordinate[]{}));
   }
 
   /**
@@ -354,6 +355,10 @@ public class GeometryFactory
   public LinearRing createLinearRing(CoordinateSequence coordinates) {
     return new LinearRing(coordinates, this);
   }
+  
+  public MultiPoint createMultiPoint() {
+    return new MultiPoint(null, this);
+  }
 
   /**
    * Creates a {@link MultiPoint} using the given {@link Point}s.
@@ -372,8 +377,22 @@ public class GeometryFactory
    *
    * @param coordinates an array (without null elements), or an empty array, or <code>null</code>
    * @return a MultiPoint object
+   * @deprecated Use {@link GeometryFactory#createMultiPointFromCoords} instead
    */
   public MultiPoint createMultiPoint(Coordinate[] coordinates) {
+      return createMultiPoint(coordinates != null
+                              ? getCoordinateSequenceFactory().create(coordinates)
+                              : null);
+  }
+
+  /**
+   * Creates a {@link MultiPoint} using the given {@link Coordinate}s.
+   * A null or empty array will create an empty MultiPoint.
+   *
+   * @param coordinates an array (without null elements), or an empty array, or <code>null</code>
+   * @return a MultiPoint object
+   */
+  public MultiPoint createMultiPointFromCoords(Coordinate[] coordinates) {
       return createMultiPoint(coordinates != null
                               ? getCoordinateSequenceFactory().create(coordinates)
                               : null);
@@ -394,7 +413,7 @@ public class GeometryFactory
     Point[] points = new Point[coordinates.size()];
     for (int i = 0; i < coordinates.size(); i++) {
       CoordinateSequence ptSeq = getCoordinateSequenceFactory()
-        .create(1, coordinates.getDimension());
+        .create(1, coordinates.getDimension(), coordinates.getMeasures());
       CoordinateSequences.copy(coordinates, i, ptSeq, 0, 1);
       points[i] = createPoint(ptSeq);
     }
@@ -428,8 +447,8 @@ public class GeometryFactory
    *            the empty geometry is to be created.
    * @throws IllegalArgumentException if the boundary ring is invalid
    */
-  public Polygon createPolygon(CoordinateSequence coordinates) {
-    return createPolygon(createLinearRing(coordinates));
+  public Polygon createPolygon(CoordinateSequence shell) {
+    return createPolygon(createLinearRing(shell));
   }
 
   /**
@@ -441,8 +460,8 @@ public class GeometryFactory
    *            the empty geometry is to be created.
    * @throws IllegalArgumentException if the boundary ring is invalid
    */
-  public Polygon createPolygon(Coordinate[] coordinates) {
-    return createPolygon(createLinearRing(coordinates));
+  public Polygon createPolygon(Coordinate[] shell) {
+    return createPolygon(createLinearRing(shell));
   }
 
   /**
@@ -456,6 +475,10 @@ public class GeometryFactory
    */
   public Polygon createPolygon(LinearRing shell) {
     return createPolygon(shell, null);
+  }
+  
+  public Polygon createPolygon() {
+    return createPolygon(null, null);
   }
 
   /**
@@ -511,7 +534,7 @@ public class GeometryFactory
      */
     // for the empty geometry, return an empty GeometryCollection
     if (geomClass == null) {
-      return createGeometryCollection(null);
+      return createGeometryCollection();
     }
     if (isHeterogeneous || hasGeometryCollection) {
       return createGeometryCollection(toGeometryArray(geomList));
@@ -534,6 +557,10 @@ public class GeometryFactory
       Assert.shouldNeverReachHere("Unhandled class: " + geom0.getClass().getName());
     }
     return geom0;
+  }
+  
+  public LineString createLineString() {
+    return createLineString(getCoordinateSequenceFactory().create(new Coordinate[]{}));
   }
 
   /**
@@ -565,12 +592,12 @@ public class GeometryFactory
    * used to represent a geometry, or to change the 
    * factory used for a geometry.
    * <p>
-   * {@link Geometry#clone()} can also be used to make a deep copy,
+   * {@link Geometry#copy()} can also be used to make a deep copy,
    * but it does not allow changing the CoordinateSequence type.
    * 
    * @return a deep copy of the input geometry, using the CoordinateSequence type of this factory
    * 
-   * @see Geometry#clone() 
+   * @see Geometry#copy() 
    */
   public Geometry createGeometry(Geometry g)
   {

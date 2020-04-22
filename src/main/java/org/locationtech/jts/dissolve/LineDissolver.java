@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+
 package org.locationtech.jts.dissolve;
 
 import java.util.ArrayList;
@@ -6,15 +18,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-
 import org.locationtech.jts.edgegraph.HalfEdge;
 import org.locationtech.jts.edgegraph.MarkHalfEdge;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateList;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryComponentFilter;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+
+
 
 /**
  * Dissolves the linear components 
@@ -66,7 +80,7 @@ public class LineDissolver
   
   /**
    * Adds a {@link Geometry} to be dissolved. 
-   * Any number of geometries may be adde by calling this method multiple times.
+   * Any number of geometries may be added by calling this method multiple times.
    * Any type of Geometry may be added.  The constituent linework will be
    * extracted to be dissolved.
    * 
@@ -217,7 +231,7 @@ public class LineDissolver
     ringStartEdge = null;
     
     MarkHalfEdge.markBoth(e);
-    line.add(e.orig().clone(), false);
+    line.add(e.orig().copy(), false);
     // scan along the path until a node is found (if one exists)
     while (e.sym().degree() == 2) {
       updateRingStartEdge(e);
@@ -228,7 +242,7 @@ public class LineDissolver
         return;
       }
       // add point to line, and move to next edge
-      line.add(eNext.orig().clone(), false);
+      line.add(eNext.orig().copy(), false);
       e = eNext;
       MarkHalfEdge.markBoth(e);
     }
@@ -245,7 +259,7 @@ public class LineDissolver
     CoordinateList line = new CoordinateList();
     HalfEdge e = eStartRing;
     
-    line.add(e.orig().clone(), false);
+    line.add(e.orig().copy(), false);
     // scan along the path until a node is found (if one exists)
     while (e.sym().degree() == 2) {
       HalfEdge eNext = e.next();
@@ -254,11 +268,11 @@ public class LineDissolver
         break;
       
       // add point to line, and move to next edge
-      line.add(eNext.orig().clone(), false);
+      line.add(eNext.orig().copy(), false);
       e = eNext;
     }
     // add final node
-    line.add(e.dest().clone(), false);
+    line.add(e.dest().copy(), false);
     
     // store the scanned line
     addLine(line);

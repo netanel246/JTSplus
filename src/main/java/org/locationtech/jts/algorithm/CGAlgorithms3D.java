@@ -1,35 +1,14 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Martin Davis.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 
 package org.locationtech.jts.algorithm;
 
@@ -45,15 +24,17 @@ import org.locationtech.jts.math.Vector3D;
  */
 public class CGAlgorithms3D 
 {
+	private CGAlgorithms3D() {}
+
 	public static double distance(Coordinate p0, Coordinate p1)
 	{
 		// default to 2D distance if either Z is not set
-		if (Double.isNaN(p0.z) || Double.isNaN(p1.z))
+		if (Double.isNaN(p0.getZ()) || Double.isNaN(p1.getZ()))
 			return p0.distance(p1);
 		
 	    double dx = p0.x - p1.x;
 	    double dy = p0.y - p1.y;
-	    double dz = p0.z - p1.z;
+	    double dz = p0.getZ() - p1.getZ();
 	    return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
@@ -77,10 +58,10 @@ public class CGAlgorithms3D
 	     *   0<r<1 P is interior to AB
 	     */
 
-	    double len2 = (B.x - A.x) * (B.x - A.x) + (B.y - A.y) * (B.y - A.y) + (B.z - A.z) * (B.z - A.z);
+	    double len2 = (B.x - A.x) * (B.x - A.x) + (B.y - A.y) * (B.y - A.y) + (B.getZ() - A.getZ()) * (B.getZ() - A.getZ());
 	    if (Double.isNaN(len2))
 	    	throw new IllegalArgumentException("Ordinates must not be NaN");
-	    double r = ((p.x - A.x) * (B.x - A.x) + (p.y - A.y) * (B.y - A.y) + (p.z - A.z) * (B.z - A.z))
+	    double r = ((p.x - A.x) * (B.x - A.x) + (p.y - A.y) * (B.y - A.y) + (p.getZ() - A.getZ()) * (B.getZ() - A.getZ()))
 	        / len2;
 
 	    if (r <= 0.0)
@@ -91,11 +72,11 @@ public class CGAlgorithms3D
 	    // compute closest point q on line segment
 	    double qx = A.x + r * (B.x - A.x);
 	    double qy = A.y + r * (B.y - A.y);
-	    double qz = A.z + r * (B.z - A.z);
+	    double qz = A.getZ() + r * (B.getZ() - A.getZ());
 	    // result is distance from p to q
 	    double dx = p.x - qx;
 	    double dy = p.y - qy;
-	    double dz = p.z - qz;
+	    double dz = p.getZ() - qz;
 	    return Math.sqrt(dx*dx + dy*dy + dz*dz);
 	}
 	
@@ -168,11 +149,11 @@ public class CGAlgorithms3D
 		 */
 		double x1 = A.x + s * (B.x - A.x);
 		double y1 = A.y + s * (B.y - A.y);
-		double z1 = A.z + s * (B.z - A.z);
+		double z1 = A.getZ() + s * (B.getZ() - A.getZ());
 
 		double x2 = C.x + t * (D.x - C.x);
 		double y2 = C.y + t * (D.y - C.y);
-		double z2 = C.z + t * (D.z - C.z);
+		double z2 = C.getZ() + t * (D.getZ() - C.getZ());
 		
 		// length (p1-p2)
 		return distance(new Coordinate(x1, y1, z1), new Coordinate(x2, y2, z2));

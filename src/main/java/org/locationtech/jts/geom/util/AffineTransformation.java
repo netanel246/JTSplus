@@ -1,40 +1,22 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 
 package org.locationtech.jts.geom.util;
 
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.CoordinateSequenceFilter;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.util.Assert;
 /**
  * Represents an affine transformation on the 2D Cartesian plane. 
  * It can be used to transform a {@link Coordinate} or {@link Geometry}.
@@ -233,7 +215,7 @@ public class AffineTransformation
    * 
    * @param xShear the value to shear by in the x direction
    * @param yShear the value to shear by in the y direction
-   * @return a tranformation for the shear
+   * @return a transformation for the shear
    */
   public static AffineTransformation shearInstance(double xShear, double yShear)
   {
@@ -247,7 +229,7 @@ public class AffineTransformation
    * 
    * @param x the value to translate by in the x direction
    * @param y the value to translate by in the y direction
-   * @return a tranformation for the translation
+   * @return a transformation for the translation
    */  
   public static AffineTransformation translationInstance(double x, double y)
   {
@@ -564,7 +546,7 @@ public class AffineTransformation
    * sin = y / d;
    * cos = x / d;
    * 
-   * T<sub>ref</sub> = T<sub>rot(sin, cos)</sub> x T<sub>scale(1, -1)</sub> x T<sub>rot(-sin, cos)</sub  
+   * T<sub>ref</sub> = T<sub>rot(sin, cos)</sub> x T<sub>scale(1, -1)</sub> x T<sub>rot(-sin, cos)</sub>
    * </pre></blockquote> 
    * 
    * @param x the x-component of the reflection line vector
@@ -860,7 +842,7 @@ public class AffineTransformation
    */
   public AffineTransformation rotate(double sinTheta, double cosTheta, double x, double y)
   {
-    compose(rotationInstance(sinTheta, cosTheta));
+    compose(rotationInstance(sinTheta, cosTheta, x, y));
     return this;
   }
   
@@ -991,15 +973,15 @@ public class AffineTransformation
   }
   
   /**
-   * Cretaes a new @link Geometry which is the result
+   * Creates a new {@link Geometry} which is the result
    * of this transformation applied to the input Geometry.
    * 
-   *@param seq  a <code>Geometry</code>
+   *@param g  a <code>Geometry</code>
    *@return a transformed Geometry
    */
   public Geometry transform(Geometry g)
   {
-    Geometry g2 = (Geometry) g.clone();
+    Geometry g2 = g.copy();
     g2.apply(this);
     return g2;    
   }

@@ -1,40 +1,24 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 
 package org.locationtech.jts.geom.util;
 
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.GeometricShapeFactory;
 
 /**
  * Creates geometries which are shaped like multi-armed stars
@@ -48,14 +32,33 @@ import org.locationtech.jts.util.*;
 public class SineStarFactory
 	extends GeometricShapeFactory
 {
+  /**
+   * Creates a sine star with the given parameters.
+   * 
+   * @param origin the origin point
+   * @param size the size of the star
+   * @param nPts the number of points in the star
+   * @param nArms the number of arms to generate
+   * @param armLengthRatio the arm length ratio
+   * @return a sine star shape
+   */
+  public static Geometry create(Coordinate origin, double size, int nPts, int nArms, double armLengthRatio) {
+    SineStarFactory gsf = new SineStarFactory();
+    gsf.setCentre(origin);
+    gsf.setSize(size);
+    gsf.setNumPoints(nPts);
+    gsf.setArmLengthRatio(armLengthRatio);
+    gsf.setNumArms(nArms);
+    Geometry poly = gsf.createSineStar();
+    return poly;
+  }
+  
 	protected int numArms = 8;
 	protected double armLengthRatio = 0.5;
 	
   /**
    * Creates a factory which will create sine stars using the default
    * {@link GeometryFactory}.
-   *
-   * @param geomFact the factory to use
    */
 	public SineStarFactory()
 	{
@@ -84,11 +87,11 @@ public class SineStarFactory
   }
   
   /**
-   * Sets the ration of the length of each arm to the distance from the tip
-   * of the arm to the centre of the star.
+   * Sets the ratio of the length of each arm to the radius of the star.
+   * A smaller number makes the arms shorter.
    * Value should be between 0.0 and 1.0
    * 
-   * @param armLengthRatio
+   * @param armLengthRatio the ratio determining the length of them arms.
    */
   public void setArmLengthRatio(double armLengthRatio)
   {
@@ -120,7 +123,7 @@ public class SineStarFactory
     Coordinate[] pts = new Coordinate[nPts + 1];
     int iPt = 0;
     for (int i = 0; i < nPts; i++) {
-      // the fraction of the way thru the current arm - in [0,1]
+      // the fraction of the way through the current arm - in [0,1]
       double ptArcFrac = (i / (double) nPts) * numArms;
       double armAngFrac = ptArcFrac - Math.floor(ptArcFrac);
       
@@ -142,7 +145,7 @@ public class SineStarFactory
     pts[iPt] = new Coordinate(pts[0]);
 
     LinearRing ring = geomFact.createLinearRing(pts);
-    Polygon poly = geomFact.createPolygon(ring, null);
+    Polygon poly = geomFact.createPolygon(ring);
     return poly;
   }
 }

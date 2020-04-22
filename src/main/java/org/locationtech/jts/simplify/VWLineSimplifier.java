@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+
 package org.locationtech.jts.simplify;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -31,7 +43,7 @@ class VWLineSimplifier
 
   public Coordinate[] simplify()
   {
-    VWLineSimplifier.VWVertex vwLine = VWVertex.buildLine(pts);
+    VWVertex vwLine = VWVertex.buildLine(pts);
     double minArea = tolerance;
     do {
       minArea = simplifyVertex(vwLine);
@@ -44,15 +56,15 @@ class VWLineSimplifier
     return simp;
   }
 
-  private double simplifyVertex(VWLineSimplifier.VWVertex vwLine)
+  private double simplifyVertex(VWVertex vwLine)
   {
     /**
      * Scan vertices in line and remove the one with smallest effective area.
      */
     // TODO: use an appropriate data structure to optimize finding the smallest area vertex
-    VWLineSimplifier.VWVertex curr = vwLine;
+    VWVertex curr = vwLine;
     double minArea = curr.getArea();
-    VWLineSimplifier.VWVertex minVertex = null;
+    VWVertex minVertex = null;
     while (curr != null) {
       double area = curr.getArea();
       if (area < minArea) {
@@ -71,12 +83,12 @@ class VWLineSimplifier
 
   static class VWVertex
   {
-    public static VWLineSimplifier.VWVertex buildLine(Coordinate[] pts)
+    public static VWVertex buildLine(Coordinate[] pts)
     {
-      VWLineSimplifier.VWVertex first = null;
-      VWLineSimplifier.VWVertex prev = null;
+      VWVertex first = null;
+      VWVertex prev = null;
       for (int i = 0; i < pts.length; i++) {
-        VWLineSimplifier.VWVertex v = new VWVertex(pts[i]);
+        VWVertex v = new VWVertex(pts[i]);
         if (first == null)
           first = v;
         v.setPrev(prev);
@@ -92,8 +104,8 @@ class VWLineSimplifier
     public static double MAX_AREA = Double.MAX_VALUE;
     
     private Coordinate pt;
-    private VWLineSimplifier.VWVertex prev;
-    private VWLineSimplifier.VWVertex next;
+    private VWVertex prev;
+    private VWVertex next;
     private double area = MAX_AREA;
     private boolean isLive = true;
 
@@ -102,12 +114,12 @@ class VWLineSimplifier
       this.pt = pt;
     }
 
-    public void setPrev(VWLineSimplifier.VWVertex prev)
+    public void setPrev(VWVertex prev)
     {
       this.prev = prev;
     }
 
-    public void setNext(VWLineSimplifier.VWVertex next)
+    public void setNext(VWVertex next)
     {
       this.next = next;
     }
@@ -129,11 +141,11 @@ class VWLineSimplifier
     {
       return isLive;
     }
-    public VWLineSimplifier.VWVertex remove()
+    public VWVertex remove()
     {
-      VWLineSimplifier.VWVertex tmpPrev = prev;
-      VWLineSimplifier.VWVertex tmpNext = next;
-      VWLineSimplifier.VWVertex result = null;
+      VWVertex tmpPrev = prev;
+      VWVertex tmpNext = next;
+      VWVertex result = null;
       if (prev != null) {
         prev.setNext(tmpNext);
         prev.updateArea();
@@ -151,7 +163,7 @@ class VWLineSimplifier
     public Coordinate[] getCoordinates()
     {
       CoordinateList coords = new CoordinateList();
-      VWLineSimplifier.VWVertex curr = this;
+      VWVertex curr = this;
       do {
         coords.add(curr.pt, false);
         curr = curr.next;

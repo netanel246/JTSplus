@@ -1,40 +1,32 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 
 package org.locationtech.jts.geom.util;
 
-import java.util.*;
-import org.locationtech.jts.geom.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 
 /**
  * A framework for processes which transform an input {@link Geometry} into
@@ -52,7 +44,7 @@ import org.locationtech.jts.geom.*;
  * A typically usage would be a transformation class that transforms <tt>Polygons</tt> into
  * <tt>Polygons</tt>, <tt>LineStrings</tt> or <tt>Points</tt>, depending on the geometry of the input
  * (For instance, a simplification operation).  
- * This class would likely need to override the {@link #transformMultiPolygon(MultiPolygon, Geometry)transformMultiPolygon}
+ * This class would likely need to override the {@link #transformMultiPolygon(MultiPolygon, Geometry)}
  * method to ensure that if input Polygons change type the result is a <tt>GeometryCollection</tt>,
  * not a <tt>MultiPolygon</tt>.
  * <p>
@@ -66,7 +58,7 @@ import org.locationtech.jts.geom.*;
  * geometry - if they cannot do this they should return <code>null</code>
  * (for instance, it may not be possible for a transformLineString implementation
  * to return at least two points - in this case, it should return <code>null</code>).
- * The {@link #transform(Geometry)transform} method itself will always
+ * The {@link #transform(Geometry)} method itself will always
  * return a non-null Geometry object (but this may be empty).
  *
  * @version 1.7
@@ -156,13 +148,13 @@ public class GeometryTransformer
   }
 
   /**
-   * Convenience method which provides statndard way of copying {@link CoordinateSequence}s
+   * Convenience method which provides a standard way of copying {@link CoordinateSequence}s
    * @param seq the sequence to copy
    * @return a deep copy of the sequence
    */
   protected final CoordinateSequence copy(CoordinateSequence seq)
   {
-    return (CoordinateSequence) seq.clone();
+    return seq.copy();
   }
 
   /**
@@ -201,7 +193,7 @@ public class GeometryTransformer
   /**
    * Transforms a LinearRing.
    * The transformation of a LinearRing may result in a coordinate sequence
-   * which does not form a structurally valid ring (i.e. a degnerate ring of 3 or fewer points).
+   * which does not form a structurally valid ring (i.e. a degenerate ring of 3 or fewer points).
    * In this case a LineString is returned. 
    * Subclasses may wish to override this method and check for this situation
    * (e.g. a subclass may choose to eliminate degenerate linear rings)
@@ -254,7 +246,6 @@ public class GeometryTransformer
         || ! (shell instanceof LinearRing)
         || shell.isEmpty() )
       isAllValidLinearRings = false;
-//return factory.createPolygon(null, null);
 
     ArrayList holes = new ArrayList();
     for (int i = 0; i < geom.getNumInteriorRing(); i++) {

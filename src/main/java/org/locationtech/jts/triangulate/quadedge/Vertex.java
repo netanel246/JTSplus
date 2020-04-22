@@ -1,41 +1,21 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 
 package org.locationtech.jts.triangulate.quadedge;
 
 
+import org.locationtech.jts.algorithm.HCoordinate;
+import org.locationtech.jts.algorithm.NotRepresentableException;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.algorithm.*;
 
 /**
  * Models a site (node) in a {@link QuadEdgeSubdivision}. 
@@ -88,11 +68,11 @@ public class Vertex
     }
 
     public double getZ() {
-        return p.z;
+        return p.getZ();
     }
 
     public void setZ(double _z) {
-        p.z = _z;
+        p.setZ(_z);
     }
 
     public Coordinate getCoordinate() {
@@ -216,7 +196,7 @@ public class Vertex
    * 
    * @param b a vertex
    * @param c a vertex
-   * @returns true if the triangle is oriented CCW
+   * @return true if the triangle is oriented CCW
    */
   public final boolean isCCW(Vertex b, Vertex c) 
   {
@@ -297,7 +277,7 @@ public class Vertex
     public Vertex midPoint(Vertex a) {
         double xm = (p.x + a.getX()) / 2.0;
         double ym = (p.y + a.getY()) / 2.0;
-        double zm = (p.z + a.getZ()) / 2.0;
+        double zm = (p.getZ() + a.getZ()) / 2.0;
         return new Vertex(xm, ym, zm);
     }
 
@@ -371,7 +351,7 @@ public class Vertex
         double dy = p.y - y0;
         double t = (d * dx - b * dy) / det;
         double u = (-c * dx + a * dy) / det;
-        double z = v0.z + t * (v1.z - v0.z) + u * (v2.z - v0.z);
+        double z = v0.getZ() + t * (v1.getZ() - v0.getZ()) + u * (v2.getZ() - v0.getZ());
         return z;
     }
 
@@ -386,8 +366,8 @@ public class Vertex
     public static double interpolateZ(Coordinate p, Coordinate p0, Coordinate p1) {
         double segLen = p0.distance(p1);
         double ptLen = p.distance(p0);
-        double dz = p1.z - p0.z;
-        double pz = p0.z + dz * (ptLen / segLen);
+        double dz = p1.getZ() - p0.getZ();
+        double pz = p0.getZ() + dz * (ptLen / segLen);
         return pz;
     }
 

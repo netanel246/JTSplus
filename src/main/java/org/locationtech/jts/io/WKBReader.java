@@ -1,39 +1,32 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.io;
 
 import java.io.IOException;
-import org.locationtech.jts.geom.*;
+
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.CoordinateSequenceFactory;
+import org.locationtech.jts.geom.CoordinateSequences;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
 
 /**
  * Reads a {@link Geometry}from a byte stream in Well-Known Binary format.
@@ -52,7 +45,18 @@ import org.locationtech.jts.geom.*;
  * This class is designed to support reuse of a single instance to read multiple
  * geometries. This class is not thread-safe; each thread should create its own
  * instance.
- *
+ * <p>
+ * As of version 1.15, the reader can read geometries following OGC 06-103r4
+ * speification used by Spatialite/Geopackage.
+ * <p>
+ * The difference between PostGIS EWKB format and the new OGC specification is
+ * that Z and M coordinates are detected with a bit mask on the higher byte in
+ * the former case (0x80 for Z and 0x40 for M) while new OGC specification use
+ * specif int ranges for 2D gemetries, Z geometries (2D code+1000), M geometries
+ * (2D code+2000) and ZM geometries (2D code+3000).
+ * <p>
+ * Note that the {@link WKBWriter} is not changed and still write PostGIS WKB
+ * geometries
  * @see WKBWriter for a formal format specification
  */
 public class WKBReader
@@ -180,13 +184,21 @@ public class WKBReader
 
 
     int typeInt = dis.readInt();
-    int geometryType = typeInt & 0xff;
-    // determine if Z values are present
-    boolean hasZ = (typeInt & 0x80000000) != 0;
-    inputDimension =  hasZ ? 3 : 2;
+    // Adds %1000 to make it compatible with OGC 06-103r4
+    int geometryType = (typeInt & 0xffff)%1000;
+
+    // handle 3D and 4D WKB geometries
+    // geometries with Z coordinates have the 0x80 flag (postgis EWKB)
+    // or are in the 1000 range (Z) or in the 3000 range (ZM) of geometry type (OGC 06-103r4)
+    boolean hasZ = ((typeInt & 0x80000000) != 0 || (typeInt & 0xffff)/1000 == 1 || (typeInt & 0xffff)/1000 == 3);
+    // geometries with M coordinates have the 0x40 flag (postgis EWKB)
+    // or are in the 1000 range (M) or in the 3000 range (ZM) of geometry type (OGC 06-103r4)
+    boolean hasM = ((typeInt & 0x40000000) != 0 || (typeInt & 0xffff)/1000 == 2 || (typeInt & 0xffff)/1000 == 3);
+    //System.out.println(typeInt + " - " + geometryType + " - hasZ:" + hasZ);
+    inputDimension = 2 + (hasZ?1:0) + (hasM?1:0);
+
     // determine if SRIDs are present
     hasSRID = (typeInt & 0x20000000) != 0;
-
     int SRID = 0;
     if (hasSRID) {
       SRID = dis.readInt();

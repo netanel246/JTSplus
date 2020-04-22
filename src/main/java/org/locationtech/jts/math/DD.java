@@ -1,38 +1,17 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Martin Davis.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.math;
 
-import java.io.*;
+import java.io.Serializable;
 
 /**
  * Implements extended-precision floating-point numbers 
@@ -42,7 +21,7 @@ import java.io.*;
  * A number x is represented as a pair of doubles, x.hi and x.lo,
  * such that the number represented by x is x.hi + x.lo, where
  * <pre>
- *    |x.lo| <= 0.5*ulp(x.hi)
+ *    |x.lo| &lt;= 0.5*ulp(x.hi)
  * </pre>
  * and ulp(y) means "unit in the last place of y".  
  * The basic arithmetic operations are implemented using 
@@ -57,7 +36,7 @@ import java.io.*;
  * This is the Java standard arithmetic model, but for performance reasons 
  * Java implementations are not
  * constrained to using this standard by default.  
- * Some processors (notably the Intel Pentium architecure) perform
+ * Some processors (notably the Intel Pentium architecture) perform
  * floating point operations in (non-IEEE-754-standard) extended-precision.
  * A JVM implementation may choose to use the non-standard extended-precision
  * as its default arithmetic mode.
@@ -688,8 +667,8 @@ public strictfp final class DD
   /**
    * Returns an integer indicating the sign of this value.
    * <ul>
-   * <li>if this value is > 0, returns 1
-   * <li>if this value is < 0, returns -1
+   * <li>if this value is &gt; 0, returns 1
+   * <li>if this value is &lt; 0, returns -1
    * <li>if this value is = 0, returns 0
    * <li>if this value is NaN, returns 0
    * </ul>
@@ -986,7 +965,7 @@ public strictfp final class DD
   /**
    * Tests whether this value is greater than another <tt>DoubleDouble</tt> value.
    * @param y a DoubleDouble value
-   * @return true if this value > y
+   * @return true if this value &gt; y
    */
   public boolean gt(DD y)
   {
@@ -995,7 +974,7 @@ public strictfp final class DD
   /**
    * Tests whether this value is greater than or equals to another <tt>DoubleDouble</tt> value.
    * @param y a DoubleDouble value
-   * @return true if this value >= y
+   * @return true if this value &gt;= y
    */
   public boolean ge(DD y)
   {
@@ -1004,7 +983,7 @@ public strictfp final class DD
   /**
    * Tests whether this value is less than another <tt>DoubleDouble</tt> value.
    * @param y a DoubleDouble value
-   * @return true if this value < y
+   * @return true if this value &lt; y
    */
   public boolean lt(DD y)
   {
@@ -1013,7 +992,7 @@ public strictfp final class DD
   /**
    * Tests whether this value is less than or equal to another <tt>DoubleDouble</tt> value.
    * @param y a DoubleDouble value
-   * @return true if this value <= y
+   * @return true if this value &lt;= y
    */
   public boolean le(DD y)
   {
@@ -1311,7 +1290,7 @@ public strictfp final class DD
    * It is defined by the following regular expression:
    * <pre>
    * [<tt>+</tt>|<tt>-</tt>] {<i>digit</i>} [ <tt>.</tt> {<i>digit</i>} ] [ ( <tt>e</tt> | <tt>E</tt> ) [<tt>+</tt>|<tt>-</tt>] {<i>digit</i>}+
-   * <pre>
+   * </pre>
    * 
    * @param str the string to parse
    * @return the value of the parsed number
@@ -1344,6 +1323,7 @@ public strictfp final class DD
     int numDigits = 0;
     int numBeforeDec = 0;
     int exp = 0;
+    boolean hasDecimalChar = false;
     while (true) {
       if (i >= strlen)
         break;
@@ -1359,6 +1339,7 @@ public strictfp final class DD
       }
       if (ch == '.') {
         numBeforeDec = numDigits;
+        hasDecimalChar = true;
         continue;
       }
       if (ch == 'e' || ch == 'E') {
@@ -1377,7 +1358,10 @@ public strictfp final class DD
           + " in string " + str);
     }
     DD val2 = val;
-    
+
+    // correct number of digits before decimal sign if we don't have a decimal sign in the string
+    if (!hasDecimalChar) numBeforeDec = numDigits;
+
     // scale the number correctly
     int numDecPlaces = numDigits - numBeforeDec - exp;
     if (numDecPlaces == 0) {

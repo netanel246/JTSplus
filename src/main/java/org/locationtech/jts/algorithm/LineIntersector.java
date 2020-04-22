@@ -1,43 +1,23 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
 
 /**
  * @version 1.7
  */
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.WKTWriter;
+import org.locationtech.jts.util.Assert;
 
 /**
  * A <code>LineIntersector</code> is an algorithm that can both test whether
@@ -47,8 +27,8 @@ import org.locationtech.jts.io.WKTWriter;
  * There are three possible outcomes when determining whether two line segments intersect:
  * <ul>
  * <li>{@link #NO_INTERSECTION} - the segments do not intersect
- * <li>{@link #POINT_INTERSECTION - the segments intersect in a single point
- * <li>{@link #COLLINEAR_INTERSECTION - the segments are collinear and they intersect in a line segment
+ * <li>{@link #POINT_INTERSECTION} - the segments intersect in a single point
+ * <li>{@link #COLLINEAR_INTERSECTION} - the segments are collinear and they intersect in a line segment
  * </ul>
  * For segments which intersect in a single point, the point may be either an endpoint
  * or in the interior of each segment.  
@@ -102,7 +82,7 @@ public abstract class LineIntersector
    * <p>
    * NOTE: This function may produce incorrect distances
    *  for inputs where p is not precisely on p1-p2
-   * (E.g. p = (139,9) p1 = (139,10), p2 = (280,1) produces distanct 0.0, which is incorrect.
+   * (E.g. p = (139,9) p1 = (139,10), p2 = (280,1) produces distance 0.0, which is incorrect.
    * <p>
    * My hypothesis is that the function is safe to use for points which are the
    * result of <b>rounding</b> points which lie on the line,
@@ -272,11 +252,11 @@ public abstract class LineIntersector
 
   private String getTopologySummary()
   {
-    StringBuffer catBuf = new StringBuffer();
-    if (isEndPoint()) catBuf.append(" endpoint");
-    if (isProper) catBuf.append(" proper");
-    if (isCollinear()) catBuf.append(" collinear");
-    return catBuf.toString();
+    StringBuilder catBuilder = new StringBuilder();
+    if (isEndPoint()) catBuilder.append(" endpoint");
+    if (isProper) catBuilder.append(" proper");
+    if (isCollinear()) catBuilder.append(" collinear");
+    return catBuilder.toString();
   }
 
   protected boolean isEndPoint() {

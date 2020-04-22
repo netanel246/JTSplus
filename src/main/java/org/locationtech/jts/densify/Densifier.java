@@ -1,38 +1,25 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.densify;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateList;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.util.GeometryTransformer;
 
 /**
@@ -110,7 +97,7 @@ public class Densifier {
 
 	/**
 	 * Sets the distance tolerance for the densification. All line segments
-	 * in the densified geometry will be no longer than the distance tolereance.
+	 * in the densified geometry will be no longer than the distance tolerance.
 	 * simplified geometry will be within this distance of the original geometry.
 	 * The distance tolerance must be positive.
 	 * 
@@ -129,10 +116,16 @@ public class Densifier {
 	 * @return the densified geometry
 	 */
 	public Geometry getResultGeometry() {
-		return (new DensifyTransformer()).transform(inputGeom);
+		return (new DensifyTransformer(distanceTolerance)).transform(inputGeom);
 	}
 
-	class DensifyTransformer extends GeometryTransformer {
+	static class DensifyTransformer extends GeometryTransformer {
+	  double distanceTolerance;
+	  
+	  DensifyTransformer(double distanceTolerance) {
+	    this.distanceTolerance = distanceTolerance;
+    }
+	  
 		protected CoordinateSequence transformCoordinates(
 				CoordinateSequence coords, Geometry parent) {
 			Coordinate[] inputPts = coords.toCoordinateArray();

@@ -1,34 +1,13 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
@@ -95,8 +74,8 @@ public class OctagonalEnvelope
   /**
    * Creates a new null bounding octagon bounding a pair of {@link Coordinate}s
    * 
+   * @param p0 a coordinate to bound
    * @param p1 a coordinate to bound
-   * @param p2 a coordinate to bound
    */
   public OctagonalEnvelope(Coordinate p0, Coordinate p1)
   {
@@ -150,7 +129,7 @@ public class OctagonalEnvelope
 
   public void expandToInclude(Geometry g)
   {
-    g.apply(new BoundingOctagonComponentFilter());
+    g.apply(new BoundingOctagonComponentFilter(this));
   }
 
   public OctagonalEnvelope expandToInclude(CoordinateSequence seq)
@@ -313,7 +292,7 @@ public class OctagonalEnvelope
   public Geometry toGeometry(GeometryFactory geomFactory)
   {
     if (isNull()) {
-      return geomFactory.createPoint((CoordinateSequence)null);
+      return geomFactory.createPoint();
     }
 
     Coordinate px00 = new Coordinate(minX, minA - minX);
@@ -358,19 +337,25 @@ public class OctagonalEnvelope
     // must be a polygon, so add closing point
     coordList.add(px00, false);
     Coordinate[] pts = coordList.toCoordinateArray();
-    return geomFactory.createPolygon(geomFactory.createLinearRing(pts), null);
+    return geomFactory.createPolygon(geomFactory.createLinearRing(pts));
   }
 
-  private class BoundingOctagonComponentFilter
+  private static class BoundingOctagonComponentFilter
   implements GeometryComponentFilter
   {
+    OctagonalEnvelope oe;
+    
+    BoundingOctagonComponentFilter(OctagonalEnvelope oe) {
+      this.oe = oe;
+    }
+    
      public void filter(Geometry geom)
      {
        if (geom instanceof LineString) {
-         expandToInclude( ((LineString) geom).getCoordinateSequence());
+         oe.expandToInclude( ((LineString) geom).getCoordinateSequence());
        }
        else if (geom instanceof Point) {
-         expandToInclude( ((Point) geom).getCoordinateSequence());
+         oe.expandToInclude( ((Point) geom).getCoordinateSequence());
        }
      }
   }

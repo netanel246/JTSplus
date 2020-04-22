@@ -1,48 +1,44 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 
 package org.locationtech.jts.triangulate.quadedge;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateList;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.Triangle;
 import org.locationtech.jts.io.WKTWriter;
+
 
 /**
  * A class that contains the {@link QuadEdge}s representing a planar
  * subdivision that models a triangulation. 
  * The subdivision is constructed using the
- * quadedge algebra defined in the classs {@link QuadEdge}. 
+ * quadedge algebra defined in the class {@link QuadEdge}.
  * All metric calculations
  * are done in the {@link Vertex} class.
  * In addition to a triangulation, subdivisions
@@ -103,7 +99,7 @@ public class QuadEdgeSubdivision {
 	 * contains the triangle is computed and stored.
 	 * 
 	 * @param env
-	 *          the bouding box to surround
+	 *          the bounding box to surround
 	 * @param tolerance
 	 *          the tolerance value for determining if two sites are equal
 	 */
@@ -259,7 +255,7 @@ public class QuadEdgeSubdivision {
 	 * 
 	 * @param v the location to search for
 	 * @param startEdge an edge of the subdivision to start searching at
-	 * @returns a QuadEdge which contains v, or is on the edge of a triangle containing v
+	 * @return a QuadEdge which contains v, or is on the edge of a triangle containing v
 	 * @throws LocateFailureException
 	 *           if the location algorithm fails to converge in a reasonable
 	 *           number of iterations
@@ -731,7 +727,7 @@ public class QuadEdgeSubdivision {
 		private List triList = new ArrayList();
 
 		public void visit(QuadEdge[] triEdges) {
-			triList.add(triEdges.clone());
+			triList.add(triEdges);
 		}
 
 		public List getTriangleEdges() {
@@ -815,7 +811,7 @@ public class QuadEdgeSubdivision {
 					loc = WKTWriter.toPoint(pts[0]);
 			}
 			// Assert.isTrue(pts.length == 4, "Too few points for visited triangle at " + loc);
-			//org.locationtech.jts.util.Debug.println("too few points for triangle at " + loc);
+			//com.vividsolutions.jts.util.Debug.println("too few points for triangle at " + loc);
 		}
 		
 		public List getTriangles() {
@@ -856,7 +852,7 @@ public class QuadEdgeSubdivision {
 		for (Iterator it = triPtsList.iterator(); it.hasNext();) {
 			Coordinate[] triPt = (Coordinate[]) it.next();
 			tris[i++] = geomFact
-					.createPolygon(geomFact.createLinearRing(triPt), null);
+					.createPolygon(geomFact.createLinearRing(triPt));
 		}
 		return geomFact.createGeometryCollection(tris);
 	}
@@ -944,7 +940,7 @@ public class QuadEdgeSubdivision {
     }
     
     Coordinate[] pts = coordList.toCoordinateArray();
-    Polygon cellPoly = geomFact.createPolygon(geomFact.createLinearRing(pts), null);
+    Polygon cellPoly = geomFact.createPolygon(geomFact.createLinearRing(pts));
     
     Vertex v = startQE.orig();
     cellPoly.setUserData(v.getCoordinate());

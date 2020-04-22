@@ -1,46 +1,32 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.io.gml2;
 
-import java.util.*;
-
-import org.xml.sax.*;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.io.gml2.GeometryStrategies.ParseStrategy;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
+
 
 /**
  * A SAX {@link DefaultHandler} which builds {@link Geometry}s 
@@ -63,7 +49,7 @@ import org.locationtech.jts.io.gml2.GeometryStrategies.ParseStrategy;
 public class GMLHandler extends DefaultHandler {
 
 	/**
-	 * This class is intended to log the SAX acitivity within a given element until its termination. 
+	 * This class is intended to log the SAX activity within a given element until its termination.
 	 * At this time, a new object of value is created and passed to the parent. 
 	 * An object of value is typically either java.lang.* or a JTS Geometry
 	 * This class is not intended for use outside this distribution, 
@@ -138,8 +124,8 @@ public class GMLHandler extends DefaultHandler {
 	 * 
 	 * @see ErrorHandler
 	 * @see ContentHandler
-	 * @see ContentHandler#setDocumentLocator(org.xml.sax.Locator)
-	 * @see org.xml.sax.Locator
+	 * @see ContentHandler#setDocumentLocator(Locator)
+	 * @see Locator
 	 * 
 	 */
 	public GMLHandler(GeometryFactory gf, ErrorHandler delegate) {
@@ -192,7 +178,7 @@ public class GMLHandler extends DefaultHandler {
 	// Parsing Methods
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
+	 * @see DefaultHandler#characters(char[], int, int)
 	 */
 	public void characters(char[] ch, int start, int length) throws SAXException {
 		if (!stack.isEmpty())
@@ -200,7 +186,7 @@ public class GMLHandler extends DefaultHandler {
 	}
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#ignorableWhitespace(char[], int, int)
+	 * @see DefaultHandler#ignorableWhitespace(char[], int, int)
 	 */
 	public void ignorableWhitespace(char[] ch, int start, int length)
 			throws SAXException {
@@ -209,7 +195,7 @@ public class GMLHandler extends DefaultHandler {
 	}
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
+	 * @see DefaultHandler#endElement(String, String, String)
 	 */
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
@@ -218,7 +204,7 @@ public class GMLHandler extends DefaultHandler {
 	}
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
+	 * @see DefaultHandler#startElement(String, String, String, Attributes)
 	 */
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
@@ -237,7 +223,7 @@ public class GMLHandler extends DefaultHandler {
 	// Logging Methods
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#setDocumentLocator(org.xml.sax.Locator)
+	 * @see DefaultHandler#setDocumentLocator(Locator)
 	 */
 	public void setDocumentLocator(Locator locator) {
 		this.locator = locator;
@@ -256,7 +242,7 @@ public class GMLHandler extends DefaultHandler {
 	// ERROR Methods
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#fatalError(org.xml.sax.SAXParseException)
+	 * @see DefaultHandler#fatalError(SAXParseException)
 	 */
 	public void fatalError(SAXParseException e) throws SAXException {
 		if (delegate != null)
@@ -266,7 +252,7 @@ public class GMLHandler extends DefaultHandler {
 	}
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#error(org.xml.sax.SAXParseException)
+	 * @see DefaultHandler#error(SAXParseException)
 	 */
 	public void error(SAXParseException e) throws SAXException {
 		if (delegate != null)
@@ -276,7 +262,7 @@ public class GMLHandler extends DefaultHandler {
 	}
 
 	/**
-	 * @see org.xml.sax.helpers.DefaultHandler#warning(org.xml.sax.SAXParseException)
+	 * @see DefaultHandler#warning(SAXParseException)
 	 */
 	public void warning(SAXParseException e) throws SAXException {
 		if (delegate != null)

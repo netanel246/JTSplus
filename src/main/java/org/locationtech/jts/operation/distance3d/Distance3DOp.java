@@ -1,34 +1,13 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Martin Davis.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.distance3d;
 
@@ -50,7 +29,7 @@ import org.locationtech.jts.operation.distance.GeometryLocation;
  * <p>
  * 3D geometries have vertex Z ordinates defined.
  * 3D {@link Polygon}s are assumed to lie in a single plane (which is enforced if not actually the case).
- * 3D {@link LineString}s and {link Point}s may have any configuration.
+ * 3D {@link LineString}s and {@link Point}s may have any configuration.
  * <p>
  * The distance computation also finds a pair of points in the input geometries
  * which have the minimum distance between them. If a point lies in the interior
@@ -87,7 +66,7 @@ public class Distance3DOp {
 	 *            another {@link Geometry}
 	 * @param distance
 	 *            the distance to test
-	 * @return true if g0.distance(g1) <= distance
+	 * @return true if g0.distance(g1) &lt;= distance
 	 */
 	public static boolean isWithinDistance(Geometry g0, Geometry g1,
 			double distance) {
@@ -577,7 +556,7 @@ public class Distance3DOp {
 		double f = Math.abs(d0) / (Math.abs(d0) + Math.abs(d1));
 		double intx = p0.x + f * (p1.x - p0.x);
 		double inty = p0.y + f * (p1.y - p0.y);
-		double intz = p0.z + f * (p1.z - p0.z);
+		double intz = p0.getZ() + f * (p1.getZ() - p0.getZ());
 		return new Coordinate(intx, inty, intz);
 	}
 

@@ -1,41 +1,32 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.io.gml2;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.Assert;
+
 
 /**
  * Writes {@link Geometry}s as XML fragments in GML2 format.
@@ -49,11 +40,11 @@ import org.locationtech.jts.util.Assert;
  * An example of the output that can be generated is:
  * 
  * <pre>
- * <gml:LineString xmlns:gml='http://www.opengis.net/gml' srsName='foo'>
- *   <gml:coordinates>
+ * &lt;gml:LineString xmlns:gml='http://www.opengis.net/gml' srsName='foo'&gt;
+ *   &lt;gml:coordinates&gt;
  *     6.03,8.17 7.697,6.959 8.333,5.0 7.697,3.041 6.03,1.83 3.97,1.83 2.303,3.041 1.667,5.0 2.303,6.959 3.97,8.17 
- *   </gml:coordinates>
- * </gml:LineString>
+ *   &lt;/gml:coordinates&gt;
+ * &lt;/gml:LineString&gt;
  * </pre>
  * 
  * <p>
@@ -83,7 +74,7 @@ public class GMLWriter {
 	 * Creates a writer which outputs GML with default settings.
 	 * The defaults are:
 	 * <ul>
-	 * <li>the namespace prefix is <tt>gml:<//t>
+	 * <li>the namespace prefix is <tt>gml:</tt>
 	 * <li>no namespace prefix declaration is written
 	 * <li>no <tt>srsName</tt> attribute is written
 	 * </ul>
@@ -95,7 +86,7 @@ public class GMLWriter {
 	 * Creates a writer which may emit the GML namespace prefix 
 	 * declaration in the geometry root element.
 	 * 
-	 * @param emitNamespace trueif the GML namespace prefix declaration should be written
+	 * @param emitNamespace true if the GML namespace prefix declaration should be written
 	 *  in the geometry root element
 	 */
 	public GMLWriter(boolean emitNamespace) {
@@ -389,7 +380,7 @@ public class GMLWriter {
 		int dim = 2;
 
 		if (coords.length > 0) {
-			if (!(Double.isNaN(coords[0].z)))
+			if (!(Double.isNaN(coords[0].getZ())))
 				dim = 3;
 		}
 
@@ -408,7 +399,7 @@ public class GMLWriter {
 				writer.write(coordinateSeparator);
 				writer.write("" + coords[i].y);
 				writer.write(coordinateSeparator);
-				writer.write("" + coords[i].z);
+				writer.write("" + coords[i].getZ());
 			}
 			writer.write(tupleSeparator);
 

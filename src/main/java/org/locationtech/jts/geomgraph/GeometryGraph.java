@@ -2,45 +2,47 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geomgraph;
 
-import java.util.*;
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.algorithm.locate.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.geomgraph.index.*;
-import org.locationtech.jts.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.locationtech.jts.algorithm.BoundaryNodeRule;
+import org.locationtech.jts.algorithm.LineIntersector;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.algorithm.PointLocator;
+import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
+import org.locationtech.jts.algorithm.locate.PointOnGeometryLocator;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateArrays;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.Polygonal;
+import org.locationtech.jts.geomgraph.index.EdgeSetIntersector;
+import org.locationtech.jts.geomgraph.index.SegmentIntersector;
+import org.locationtech.jts.geomgraph.index.SimpleMCSweepLineIntersector;
+import org.locationtech.jts.util.Assert;
 
 /**
  * A GeometryGraph is a graph that models a given Geometry
@@ -174,7 +176,7 @@ public class GeometryGraph
     int i = 0;
     for (Iterator it = coll.iterator(); it.hasNext(); ) {
       Node node = (Node) it.next();
-      pts[i++] = (Coordinate) node.getCoordinate().clone();
+      pts[i++] = node.getCoordinate().copy();
     }
     return pts;
   }
@@ -250,7 +252,7 @@ public class GeometryGraph
 
     int left  = cwLeft;
     int right = cwRight;
-    if (CGAlgorithms.isCCW(coord)) {
+    if (Orientation.isCCW(coord)) {
       left = cwRight;
       right = cwLeft;
     }
@@ -335,25 +337,39 @@ public class GeometryGraph
    * Compute self-nodes, taking advantage of the Geometry type to
    * minimize the number of intersection tests.  (E.g. rings are
    * not tested for self-intersection, since they are assumed to be valid).
+   * 
    * @param li the LineIntersector to use
-   * @param computeRingSelfNodes if <false>, intersection checks are optimized to not test rings for self-intersection
-   * @return the SegmentIntersector used, containing information about the intersections found
+   * @param computeRingSelfNodes if <code>false</code>, intersection checks are optimized to not test rings for self-intersection
+   * @return the computed SegmentIntersector containing information about the intersections found
    */
   public SegmentIntersector computeSelfNodes(LineIntersector li, boolean computeRingSelfNodes)
   {
+	  return computeSelfNodes(li, computeRingSelfNodes, false);
+  }
+  
+  /**
+   * Compute self-nodes, taking advantage of the Geometry type to
+   * minimize the number of intersection tests.  (E.g. rings are
+   * not tested for self-intersection, since they are assumed to be valid).
+   * 
+   * @param li the LineIntersector to use
+   * @param computeRingSelfNodes if <code>false</code>, intersection checks are optimized to not test rings for self-intersection
+   * @param isDoneIfProperInt short-circuit the intersection computation if a proper intersection is found
+   * @return the computed SegmentIntersector containing information about the intersections found
+   */
+  public SegmentIntersector computeSelfNodes(LineIntersector li, boolean computeRingSelfNodes, boolean isDoneIfProperInt)
+  {
     SegmentIntersector si = new SegmentIntersector(li, true, false);
+    si.setIsDoneIfProperInt(isDoneIfProperInt);
     EdgeSetIntersector esi = createEdgeSetIntersector();
-    // optimized test for Polygons and Rings
-    if (! computeRingSelfNodes
-        && (parentGeom instanceof LinearRing
-        || parentGeom instanceof Polygon
-        || parentGeom instanceof MultiPolygon)) {
-      esi.computeIntersections(edges, si, false);
-    }
-    else {
-      esi.computeIntersections(edges, si, true);
-    }
-//System.out.println("SegmentIntersector # tests = " + si.numTests);
+    // optimize intersection search for valid Polygons and LinearRings
+    boolean isRings = parentGeom instanceof LinearRing
+			|| parentGeom instanceof Polygon
+			|| parentGeom instanceof MultiPolygon;
+    boolean computeAllSegments = computeRingSelfNodes || ! isRings;
+    esi.computeIntersections(edges, si, computeAllSegments);
+    
+    //System.out.println("SegmentIntersector # tests = " + si.numTests);
     addSelfIntersectionNodes(argIndex);
     return si;
   }
@@ -442,7 +458,7 @@ Debug.print(e.getEdgeIntersectionList());
    * Determines the {@link Location} of the given {@link Coordinate}
    * in this geometry.
    * 
-   * @param p the point to test
+   * @param pt the point to test
    * @return the location of the point in the geometry
    */
   public int locate(Coordinate pt)

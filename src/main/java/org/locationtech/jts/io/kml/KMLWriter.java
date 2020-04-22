@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+
 package org.locationtech.jts.io.kml;
 
 import java.io.IOException;
@@ -13,6 +25,7 @@ import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.StringUtil;
+
 
 /**
  * Writes a formatted string containing the KML representation of a JTS
@@ -159,7 +172,7 @@ public class KMLWriter
   }
 
   /**
-   * Sets the maximum nummber of decimal places to output in ordinate values.
+   * Sets the maximum number of decimal places to output in ordinate values.
    * Useful for limiting output size.
    * 
    * @param precision the number of decimal places to output
@@ -343,7 +356,7 @@ public class KMLWriter
     buf.append(COORDINATE_SEPARATOR);
     write(p.y, buf);
 
-    double z = p.z;
+    double z = p.getZ();
     // if altitude was specified directly, use it
     if (!Double.isNaN(zVal))
       z = zVal;

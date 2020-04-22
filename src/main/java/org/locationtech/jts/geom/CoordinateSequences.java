@@ -1,34 +1,13 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
@@ -44,6 +23,8 @@ public class CoordinateSequences {
 
   /**
    * Reverses the coordinates in a sequence in-place.
+   * 
+   * @param seq the coordinate sequence to reverse
    */
   public static void reverse(CoordinateSequence seq)
   {
@@ -229,16 +210,148 @@ public class CoordinateSequences {
     if (size == 0) 
       return "()";
     int dim = cs.getDimension();
-    StringBuffer buf = new StringBuffer();
-    buf.append('(');
+    StringBuilder builder = new StringBuilder();
+    builder.append('(');
     for (int i = 0; i < size; i++) {
-      if (i > 0) buf.append(" ");
+      if (i > 0) builder.append(" ");
       for (int d = 0; d < dim; d++) {
-        if (d > 0) buf.append(",");
-        buf.append(StringUtil.toString(cs.getOrdinate(i, d)));
+        if (d > 0) builder.append(",");
+        builder.append(StringUtil.toString(cs.getOrdinate(i, d)));
       }
     }
-    buf.append(')');
-    return buf.toString();
+    builder.append(')');
+    return builder.toString();
   }
-}
+
+  /**
+   *  Returns the minimum coordinate, using the usual lexicographic comparison.
+   *
+   *@param  seq  the coordinate sequence to search
+   *@return  the minimum coordinate in the sequence, found using <code>compareTo</code>
+   *@see Coordinate#compareTo(Object)
+   */
+  public static Coordinate minCoordinate(CoordinateSequence seq)
+  {
+    Coordinate minCoord = null;
+    for (int i = 0; i < seq.size(); i++) {
+      Coordinate testCoord = seq.getCoordinate(i);
+      if (minCoord == null || minCoord.compareTo(testCoord) > 0) {
+        minCoord = testCoord;
+      }
+    }
+    return minCoord;
+  }
+  /**
+   *  Returns the index of the minimum coordinate of the whole
+   *  coordinate sequence, using the usual lexicographic comparison.
+   *
+   *@param  seq  the coordinate sequence to search
+   *@return  the index of the minimum coordinate in the sequence, found using <code>compareTo</code>
+   *@see Coordinate#compareTo(Object)
+   */
+  public static int minCoordinateIndex(CoordinateSequence seq) {
+    return minCoordinateIndex(seq, 0, seq.size() - 1);
+  }
+
+  /**
+   *  Returns the index of the minimum coordinate of a part of
+   *  the coordinate sequence (defined by {@code from} and {@code to},
+   *  using the usual lexicographic comparison.
+   *
+   *@param  seq   the coordinate sequence to search
+   *@param  from  the lower search index
+   *@param  to    the upper search index
+   *@return  the index of the minimum coordinate in the sequence, found using <code>compareTo</code>
+   *@see Coordinate#compareTo(Object)
+   */
+  public static int minCoordinateIndex(CoordinateSequence seq, int from, int to)
+  {
+    int minCoordIndex = -1;
+    Coordinate minCoord = null;
+    for (int i = from; i <= to; i++) {
+      Coordinate testCoord = seq.getCoordinate(i);
+      if (minCoord == null || minCoord.compareTo(testCoord) > 0) {
+          minCoord = testCoord;
+          minCoordIndex = i;
+      }
+    }
+    return minCoordIndex;
+  }
+
+  /**
+   *  Shifts the positions of the coordinates until <code>firstCoordinate</code>
+   *  is first.
+   *
+   *@param  seq      the coordinate sequence to rearrange
+   *@param  firstCoordinate  the coordinate to make first
+   */
+  public static void scroll(CoordinateSequence seq, Coordinate firstCoordinate) {
+    int i = indexOf(firstCoordinate, seq);
+    if (i <= 0) return;
+    scroll(seq, i);
+  }
+
+  /**
+   *  Shifts the positions of the coordinates until the coordinate at  <code>firstCoordinateIndex</code>
+   *  is first.
+   *
+   *@param  seq      the coordinate sequence to rearrange
+   *@param  indexOfFirstCoordinate  the index of the coordinate to make first
+   */
+  public static void scroll(CoordinateSequence seq, int indexOfFirstCoordinate)
+  {
+    scroll(seq, indexOfFirstCoordinate, CoordinateSequences.isRing(seq));
+  }
+
+  /**
+   *  Shifts the positions of the coordinates until the coordinate at  <code>firstCoordinateIndex</code>
+   *  is first.
+   *
+   *@param  seq      the coordinate sequence to rearrange
+   *@param  indexOfFirstCoordinate
+   *                 the index of the coordinate to make first
+   *@param  ensureRing
+   *                 makes sure that {@code} will be a closed ring upon exit
+   */
+    public static void scroll(CoordinateSequence seq, int indexOfFirstCoordinate, boolean ensureRing) {
+    int i = indexOfFirstCoordinate;
+    if (i <= 0) return;
+
+    // make a copy of the sequence
+    CoordinateSequence copy = seq.copy();
+
+    // test if ring, determine last index
+    int last = ensureRing ? seq.size() - 1: seq.size();
+
+    // fill in values
+    for (int j = 0; j < last; j++)
+    {
+      for (int k = 0; k < seq.getDimension(); k++)
+        seq.setOrdinate(j, k, copy.getOrdinate((indexOfFirstCoordinate+j)%last, k));
+    }
+
+    // Fix the ring (first == last)
+    if (ensureRing) {
+      for (int k = 0; k < seq.getDimension(); k++)
+        seq.setOrdinate(last, k, seq.getOrdinate(0, k));
+    }
+  }
+
+  /**
+   *  Returns the index of <code>coordinate</code> in a {@link CoordinateSequence}
+   *  The first position is 0; the second, 1; etc.
+   *
+   *@param  coordinate   the <code>Coordinate</code> to search for
+   *@param  seq  the coordinate sequence to search
+   *@return              the position of <code>coordinate</code>, or -1 if it is
+   *      not found
+   */
+  public static int indexOf(Coordinate coordinate, CoordinateSequence seq) {
+    for (int i = 0; i < seq.size(); i++) {
+      if (coordinate.x == seq.getOrdinate(i, CoordinateSequence.X) &&
+          coordinate.y == seq.getOrdinate(i, CoordinateSequence.Y)) {
+        return i;
+      }
+    }
+    return -1;
+  }}

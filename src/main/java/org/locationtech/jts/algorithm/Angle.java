@@ -1,34 +1,13 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
 
@@ -40,18 +19,29 @@ import org.locationtech.jts.geom.Coordinate;
  */
 public class Angle
 {
+  /**
+   * The value of 2*Pi
+   */
   public static final double PI_TIMES_2 = 2.0 * Math.PI;
+  /**
+   * The value of Pi/2
+   */
   public static final double PI_OVER_2 = Math.PI / 2.0;
+  /**
+   * The value of Pi/4
+   */
   public static final double PI_OVER_4 = Math.PI / 4.0;
 
   /** Constant representing counterclockwise orientation */
-  public static final int COUNTERCLOCKWISE = CGAlgorithms.COUNTERCLOCKWISE;
+  public static final int COUNTERCLOCKWISE = Orientation.COUNTERCLOCKWISE;
 
   /** Constant representing clockwise orientation */
-  public static final int CLOCKWISE = CGAlgorithms.CLOCKWISE;
+  public static final int CLOCKWISE = Orientation.CLOCKWISE;
 
   /** Constant representing no orientation */
-  public static final int NONE = CGAlgorithms.COLLINEAR;
+  public static final int NONE = Orientation.COLLINEAR;
+
+  private Angle() {}
 
   /**
    * Converts from radians to degrees.
@@ -78,6 +68,8 @@ public class Angle
    * relative to the positive X-axis.
    * The angle is normalized to be in the range [ -Pi, Pi ].
    *
+   * @param p0 the initial point of the vector
+   * @param p1 the terminal point of the vector
    * @return the normalized angle (in radians) that p0-p1 makes with the positive x-axis.
    */
   public static double angle(Coordinate p0, Coordinate p1) {
@@ -87,10 +79,11 @@ public class Angle
   }
 
   /**
-   * Returns the angle that the vector from (0,0) to p,
+   * Returns the angle of the vector from (0,0) to p,
    * relative to the positive X-axis.
    * The angle is normalized to be in the range ( -Pi, Pi ].
    *
+   * @param p the terminal point of the vector
    * @return the normalized angle (in radians) that p makes with the positive x-axis.
    */
   public static double angle(Coordinate p) {
@@ -102,11 +95,12 @@ public class Angle
    * Tests whether the angle between p0-p1-p2 is acute.
    * An angle is acute if it is less than 90 degrees.
    * <p>
-   * Note: this implementation is not precise (determistic) for angles very close to 90 degrees.
+   * Note: this implementation is not precise (deterministic) for angles very close to 90 degrees.
    *
    * @param p0 an endpoint of the angle
    * @param p1 the base of the angle
    * @param p2 the other endpoint of the angle
+   * @return true if the angle is acute
    */
   public static boolean isAcute(Coordinate p0, Coordinate p1, Coordinate p2)
   {
@@ -123,11 +117,12 @@ public class Angle
    * Tests whether the angle between p0-p1-p2 is obtuse.
    * An angle is obtuse if it is greater than 90 degrees.
    * <p>
-   * Note: this implementation is not precise (determistic) for angles very close to 90 degrees.
+   * Note: this implementation is not precise (deterministic) for angles very close to 90 degrees.
    *
    * @param p0 an endpoint of the angle
    * @param p1 the base of the angle
    * @param p2 the other endpoint of the angle
+   * @return true if the angle is obtuse
    */
   public static boolean isObtuse(Coordinate p0, Coordinate p1, Coordinate p2)
   {

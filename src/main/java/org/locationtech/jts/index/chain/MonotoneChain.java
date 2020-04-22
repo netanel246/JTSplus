@@ -1,40 +1,22 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.index.chain;
 
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geomgraph.index.MonotoneChainEdge;
 
 
 /**
@@ -165,7 +147,6 @@ public class MonotoneChain {
   {
     Coordinate p0 = pts[start0];
     Coordinate p1 = pts[end0];
-    mcs.tempEnv1.init(p0, p1);
 
 //Debug.println("trying:" + p0 + p1 + " [ " + start0 + ", " + end0 + " ]");
     // terminating condition for the recursion
@@ -175,7 +156,7 @@ public class MonotoneChain {
       return;
     }
     // nothing to do if the envelopes don't overlap
-    if (! searchEnv.intersects(mcs.tempEnv1))
+    if (! searchEnv.intersects(p0, p1))
       return;
 
     // the chains overlap, so split each in half and iterate  (binary search)
@@ -216,20 +197,14 @@ public class MonotoneChain {
     int start1, int end1,
     MonotoneChainOverlapAction mco)
   {
-    Coordinate p00 = pts[start0];
-    Coordinate p01 = pts[end0];
-    Coordinate p10 = mc.pts[start1];
-    Coordinate p11 = mc.pts[end1];
 //Debug.println("computeIntersectsForChain:" + p00 + p01 + p10 + p11);
     // terminating condition for the recursion
     if (end0 - start0 == 1 && end1 - start1 == 1) {
       mco.overlap(this, start0, mc, start1);
       return;
     }
-    // nothing to do if the envelopes of these chains don't overlap
-    mco.tempEnv1.init(p00, p01);
-    mco.tempEnv2.init(p10, p11);
-    if (! mco.tempEnv1.intersects(mco.tempEnv2)) return;
+    // nothing to do if the envelopes of these subchains don't overlap
+    if (! overlaps(start0, end0, mc, start1, end1)) return;
 
     // the chains overlap, so split each in half and iterate  (binary search)
     int mid0 = (start0 + end0) / 2;
@@ -246,4 +221,22 @@ public class MonotoneChain {
       if (mid1 < end1)   computeOverlaps(mid0,   end0, mc, mid1,    end1, mco);
     }
   }
+  /**
+   * Tests whether the envelopes of two chain sections overlap (intersect).
+   * 
+   * @param start0
+   * @param end0
+   * @param mc
+   * @param start1
+   * @param end1
+   * @return true if the section envelopes overlap
+   */
+  private boolean overlaps(
+      int start0, int end0,
+      MonotoneChain mc,
+      int start1, int end1)
+  {
+    return Envelope.intersects(pts[start0], pts[end0], mc.pts[start1], mc.pts[end1]);
+  }
+
 }

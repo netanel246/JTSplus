@@ -1,36 +1,15 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
@@ -40,15 +19,16 @@ import java.util.Iterator;
 
 /**
  * A list of {@link Coordinate}s, which may
- * be set to prevent repeated coordinates from occuring in the list.
+ * be set to prevent repeated coordinates from occurring in the list.
  *
  *
  * @version 1.7
  */
 public class CoordinateList
-  extends ArrayList
+  extends ArrayList<Coordinate>
 {
-  //With contributions from Markus Schaber [schabios@logi-track.com]
+  private static final long serialVersionUID = -1626110935756089896L;
+//With contributions from Markus Schaber [schabios@logi-track.com]
   //[Jon Aquino 2004-03-25]
   private final static Coordinate[] coordArrayType = new Coordinate[0];
 
@@ -56,7 +36,7 @@ public class CoordinateList
    * Constructs a new list without any coordinates
    */
   public CoordinateList()
-  { super();
+  {
   }
 
   /**
@@ -83,6 +63,10 @@ public class CoordinateList
   {
   	ensureCapacity(coord.length);
     add(coord, allowRepeated);
+  }
+
+  public boolean add(Coordinate coord) {
+	return super.add(coord);
   }
 
   public Coordinate getCoordinate(int i) { return (Coordinate) get(i); }
@@ -203,11 +187,11 @@ public class CoordinateList
    * @param allowRepeated if set to false, repeated coordinates are collapsed
    * @return true (as by general collection contract)
    */
-  public boolean addAll(Collection coll, boolean allowRepeated)
+  public boolean addAll(Collection<? extends Coordinate> coll, boolean allowRepeated)
   {
     boolean isChanged = false;
-    for (Iterator i = coll.iterator(); i.hasNext(); ) {
-      add((Coordinate) i.next(), allowRepeated);
+    for (Iterator<? extends Coordinate> i = coll.iterator(); i.hasNext(); ) {
+      add(i.next(), allowRepeated);
       isChanged = true;
     }
     return isChanged;
@@ -218,8 +202,10 @@ public class CoordinateList
    */
   public void closeRing()
   {
-    if (size() > 0)
-      add(new Coordinate((Coordinate) get(0)), false);
+    if (size() > 0) {
+      Coordinate duplicate = get(0).copy();
+      add(duplicate, false);
+    }
   }
 
   /** Returns the Coordinates in this collection.
@@ -238,8 +224,8 @@ public class CoordinateList
    */
   public Object clone() {
       CoordinateList clone = (CoordinateList) super.clone();
-      for (int i = 0; i < this.size(); i++) {
-          clone.add(i, ((Coordinate) this.get(i)).clone());
+      for (int i = 0; i < this.size(); i++) {	  
+          clone.add(i, (Coordinate) this.get(i).clone());
       }
       return clone;
   }

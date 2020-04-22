@@ -1,42 +1,27 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
 import java.io.Serializable;
 
-import org.locationtech.jts.algorithm.*;
+import org.locationtech.jts.algorithm.Distance;
+import org.locationtech.jts.algorithm.HCoordinate;
+import org.locationtech.jts.algorithm.LineIntersector;
+import org.locationtech.jts.algorithm.NotRepresentableException;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.algorithm.RobustLineIntersector;
+
 
 /**
  * Represents a line segment defined by two {@link Coordinate}s.
@@ -153,7 +138,7 @@ public class LineSegment
    * Determines the orientation of a LineSegment relative to this segment.
    * The concept of orientation is specified as follows:
    * Given two line segments A and L,
-   * <ul
+   * <ul>
    * <li>A is to the left of a segment L if A lies wholly in the
    * closed half-plane lying to the left of L
    * <li>A is to the right of a segment L if A lies wholly in the
@@ -170,8 +155,8 @@ public class LineSegment
    */
   public int orientationIndex(LineSegment seg)
   {
-    int orient0 = CGAlgorithms.orientationIndex(p0, p1, seg.p0);
-    int orient1 = CGAlgorithms.orientationIndex(p0, p1, seg.p1);
+    int orient0 = Orientation.index(p0, p1, seg.p0);
+    int orient1 = Orientation.index(p0, p1, seg.p1);
     // this handles the case where the points are L or collinear
     if (orient0 >= 0 && orient1 >= 0)
       return Math.max(orient0, orient1);
@@ -184,7 +169,7 @@ public class LineSegment
   
   /**
    * Determines the orientation index of a {@link Coordinate} relative to this segment.
-   * The orientation index is as defined in {@link CGAlgorithms#computeOrientation}.
+   * The orientation index is as defined in {@link Orientation#computeOrientation}.
    *
    * @param p the coordinate to compare
    *
@@ -192,11 +177,11 @@ public class LineSegment
    * @return -1 (RIGHT) if <code>p</code> is to the right of this segment
    * @return 0 (COLLINEAR) if <code>p</code> is collinear with this segment
    * 
-   * @see CGAlgorithms#computeOrientation(Coordinate, Coordinate, Coordinate)
+   * @see Orientation#computeOrientation(Coordinate, Coordinate, Coordinate)
    */
   public int orientationIndex(Coordinate p)
   {
-    return CGAlgorithms.orientationIndex(p0, p1, p);
+    return Orientation.index(p0, p1, p);
   }
   
   /**
@@ -261,7 +246,7 @@ public class LineSegment
    */
   public double distance(LineSegment ls)
   {
-    return CGAlgorithms.distanceLineLine(p0, p1, ls.p0, ls.p1);
+    return Distance.segmentToSegment(p0, p1, ls.p0, ls.p1);
   }
 
   /**
@@ -271,7 +256,7 @@ public class LineSegment
    */
   public double distance(Coordinate p)
   {
-    return CGAlgorithms.distancePointLine(p, p0, p1);
+    return Distance.pointToSegment(p, p0, p1);
   }
 
   /**
@@ -282,7 +267,7 @@ public class LineSegment
    */
   public double distancePerpendicular(Coordinate p)
   {
-    return CGAlgorithms.distancePointLinePerpendicular(p, p0, p1);
+    return Distance.pointToLinePerpendicular(p, p0, p1);
   }
 
   /**
@@ -290,7 +275,7 @@ public class LineSegment
    * fraction along the line defined by this segment.
    * A fraction of <code>0.0</code> returns the start point of the segment;
    * a fraction of <code>1.0</code> returns the end point of the segment.
-   * If the fraction is < 0.0 or > 1.0 the point returned 
+   * If the fraction is &lt; 0.0 or &gt; 1.0 the point returned
    * will lie before the start or beyond the end of the segment. 
    *
    * @param segmentLengthFraction the fraction of the segment length along the line
@@ -352,7 +337,7 @@ public class LineSegment
    * Computes the Projection Factor for the projection of the point p
    * onto this LineSegment.  The Projection Factor is the constant r
    * by which the vector for this segment must be multiplied to
-   * equal the vector for the projection of <tt>p<//t> on the line
+   * equal the vector for the projection of <tt>p</tt> on the line
    * defined by this segment.
    * <p>
    * The projection factor will lie in the range <tt>(-inf, +inf)</tt>,
@@ -586,7 +571,7 @@ public class LineSegment
   /**
    * Creates a LineString with the same coordinates as this segment
    * 
-   * @param geomFactory the geometery factory to use
+   * @param geomFactory the geometry factory to use
    * @return a LineString with the same geometry as this segment
    */
   public LineString toGeometry(GeometryFactory geomFactory)
@@ -616,12 +601,12 @@ public class LineSegment
    * @return a hashcode for this object
    */
   public int hashCode() {
-    long bits0 = java.lang.Double.doubleToLongBits(p0.x);
-    bits0 ^= java.lang.Double.doubleToLongBits(p0.y) * 31;
+    long bits0 = Double.doubleToLongBits(p0.x);
+    bits0 ^= Double.doubleToLongBits(p0.y) * 31;
     int hash0 = (((int) bits0) ^ ((int) (bits0  >> 32)));
     
-    long bits1 = java.lang.Double.doubleToLongBits(p1.x);
-    bits1 ^= java.lang.Double.doubleToLongBits(p1.y) * 31;
+    long bits1 = Double.doubleToLongBits(p1.x);
+    bits1 ^= Double.doubleToLongBits(p1.y) * 31;
     int hash1 = (((int) bits1) ^ ((int) (bits1  >> 32)));
 
     // XOR is supposed to be a good way to combine hashcodes

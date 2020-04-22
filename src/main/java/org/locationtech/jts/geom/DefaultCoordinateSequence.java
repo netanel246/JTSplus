@@ -1,34 +1,13 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 import java.io.Serializable;
@@ -41,7 +20,7 @@ import java.io.Serializable;
  *
  * @version 1.7
  *
- * @deprecated no longer used
+ * @deprecated No longer used, recommend CoordinateArraySequence for an array backed implementation
  */
 class DefaultCoordinateSequence
     implements CoordinateSequence, Serializable
@@ -89,7 +68,7 @@ class DefaultCoordinateSequence
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#getDimension()
+   * @see CoordinateSequence#getDimension()
    */
   public int getDimension() { return 3; }
 
@@ -114,7 +93,7 @@ class DefaultCoordinateSequence
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#getX(int)
+   * @see CoordinateSequence#getX(int)
    */
   public void getCoordinate(int index, Coordinate coord) {
     coord.x = coordinates[index].x;
@@ -122,48 +101,57 @@ class DefaultCoordinateSequence
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#getX(int)
+   * @see CoordinateSequence#getX(int)
    */
   public double getX(int index) {
     return coordinates[index].x;
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#getY(int)
+   * @see CoordinateSequence#getY(int)
    */
   public double getY(int index) {
     return coordinates[index].y;
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#getOrdinate(int, int)
+   * @see CoordinateSequence#getOrdinate(int, int)
    */
   public double getOrdinate(int index, int ordinateIndex)
   {
     switch (ordinateIndex) {
       case CoordinateSequence.X:  return coordinates[index].x;
       case CoordinateSequence.Y:  return coordinates[index].y;
-      case CoordinateSequence.Z:  return coordinates[index].z;
+      case CoordinateSequence.Z:  return coordinates[index].getZ();
     }
     return Double.NaN;
   }
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequence#setOrdinate(int, int, double)
+   * @see CoordinateSequence#setOrdinate(int, int, double)
    */
   public void setOrdinate(int index, int ordinateIndex, double value)
   {
     switch (ordinateIndex) {
       case CoordinateSequence.X:  coordinates[index].x = value; break;
       case CoordinateSequence.Y:  coordinates[index].y = value; break;
-      case CoordinateSequence.Z:  coordinates[index].z = value; break;
+      case CoordinateSequence.Z:  coordinates[index].setZ(value); break;
     }
   }
   /**
    * Creates a deep copy of the Object
    *
    * @return The deep copy
+   * @deprecated
    */
   public Object clone() {
+    return copy();
+  }
+  /**
+   * Creates a deep copy of the DefaultCoordinateSequence
+   *
+   * @return The deep copy
+   */
+  public DefaultCoordinateSequence copy() {
     Coordinate[] cloneCoordinates = new Coordinate[size()];
     for (int i = 0; i < coordinates.length; i++) {
       cloneCoordinates[i] = (Coordinate) coordinates[i].clone();
@@ -202,15 +190,15 @@ class DefaultCoordinateSequence
    */
   public String toString() {
     if (coordinates.length > 0) {
-      StringBuffer strBuf = new StringBuffer(17 * coordinates.length);
-      strBuf.append('(');
-      strBuf.append(coordinates[0]);
+      StringBuilder strBuilder = new StringBuilder(17 * coordinates.length);
+      strBuilder.append('(');
+      strBuilder.append(coordinates[0]);
       for (int i = 1; i < coordinates.length; i++) {
-        strBuf.append(", ");
-        strBuf.append(coordinates[i]);
+        strBuilder.append(", ");
+        strBuilder.append(coordinates[i]);
       }
-      strBuf.append(')');
-      return strBuf.toString();
+      strBuilder.append(')');
+      return strBuilder.toString();
     } else {
       return "()";
     }

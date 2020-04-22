@@ -1,42 +1,33 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.overlay;
 
-import java.util.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.geomgraph.*;
-import org.locationtech.jts.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import org.locationtech.jts.algorithm.PointLocation;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateArrays;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.TopologyException;
+import org.locationtech.jts.geomgraph.DirectedEdge;
+import org.locationtech.jts.geomgraph.EdgeRing;
+import org.locationtech.jts.geomgraph.PlanarGraph;
+import org.locationtech.jts.util.Assert;
 
 /**
  * Forms {@link Polygon}s out of a graph of {@link DirectedEdge}s.
@@ -48,8 +39,6 @@ import org.locationtech.jts.util.*;
 public class PolygonBuilder {
 
   private GeometryFactory geometryFactory;
-  //private List dirEdgeList;
-  //private NodeMap nodes;
   private List shellList        = new ArrayList();
 
   public PolygonBuilder(GeometryFactory geometryFactory)
@@ -242,28 +231,35 @@ public class PolygonBuilder {
    * @return containing EdgeRing, if there is one
    * or null if no containing EdgeRing is found
    */
-  private EdgeRing findEdgeRingContaining(EdgeRing testEr, List shellList)
+  private static EdgeRing findEdgeRingContaining(EdgeRing testEr, List shellList)
   {
     LinearRing testRing = testEr.getLinearRing();
     Envelope testEnv = testRing.getEnvelopeInternal();
     Coordinate testPt = testRing.getCoordinateN(0);
 
     EdgeRing minShell = null;
-    Envelope minEnv = null;
+    Envelope minShellEnv = null;
     for (Iterator it = shellList.iterator(); it.hasNext(); ) {
       EdgeRing tryShell = (EdgeRing) it.next();
-      LinearRing tryRing = tryShell.getLinearRing();
-      Envelope tryEnv = tryRing.getEnvelopeInternal();
-      if (minShell != null) minEnv = minShell.getLinearRing().getEnvelopeInternal();
+      LinearRing tryShellRing = tryShell.getLinearRing();
+      Envelope tryShellEnv = tryShellRing.getEnvelopeInternal();
+      // the hole envelope cannot equal the shell envelope
+      // (also guards against testing rings against themselves)
+      if (tryShellEnv.equals(testEnv)) continue;
+      // hole must be contained in shell
+      if (! tryShellEnv.contains(testEnv)) continue;
+      
+      testPt = CoordinateArrays.ptNotInList(testRing.getCoordinates(), tryShellRing.getCoordinates());
       boolean isContained = false;
-      if (tryEnv.contains(testEnv)
-          && CGAlgorithms.isPointInRing(testPt, tryRing.getCoordinates()) )
+      if (PointLocation.isInRing(testPt, tryShellRing.getCoordinates()) )
         isContained = true;
+
       // check if this new containing ring is smaller than the current minimum ring
       if (isContained) {
         if (minShell == null
-            || minEnv.contains(tryEnv)) {
+            || minShellEnv.contains(tryShellEnv)) {
           minShell = tryShell;
+          minShellEnv = minShell.getLinearRing().getEnvelopeInternal();
         }
       }
     }
@@ -280,20 +276,5 @@ public class PolygonBuilder {
     }
     return resultPolyList;
   }
-
-  /**
-   * Checks the current set of shells (with their associated holes) to
-   * see if any of them contain the point.
-   */
-  public boolean containsPoint(Coordinate p)
-  {
-    for (Iterator it = shellList.iterator(); it.hasNext(); ) {
-      EdgeRing er = (EdgeRing) it.next();
-      if (er.containsPoint(p))
-       return true;
-    }
-    return false;
-  }
-
 
 }

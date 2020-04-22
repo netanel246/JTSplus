@@ -1,44 +1,42 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.valid;
 
-import java.util.*;
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.geomgraph.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.*;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.locationtech.jts.algorithm.LineIntersector;
+import org.locationtech.jts.algorithm.PointLocation;
+import org.locationtech.jts.algorithm.RobustLineIntersector;
+import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
+import org.locationtech.jts.algorithm.locate.PointOnGeometryLocator;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geomgraph.Edge;
+import org.locationtech.jts.geomgraph.EdgeIntersection;
+import org.locationtech.jts.geomgraph.EdgeIntersectionList;
+import org.locationtech.jts.geomgraph.GeometryGraph;
+import org.locationtech.jts.util.Assert;
 
 /**
  * Implements the algorithms required to compute the <code>isValid()</code> method
@@ -224,8 +222,9 @@ public class IsValidOp
     GeometryGraph graph = new GeometryGraph(0, g);
     checkTooFewPoints(graph);
     if (validErr != null) return;
+    
     LineIntersector li = new RobustLineIntersector();
-    graph.computeSelfNodes(li, true);
+    graph.computeSelfNodes(li, true, true);
     checkNoSelfIntersectingRings(graph);
   }
 
@@ -337,6 +336,7 @@ public class IsValidOp
 
   private void checkClosedRing(LinearRing ring)
   {
+    if (ring.isEmpty()) return;
     if (! ring.isClosed() ) {
     	Coordinate pt = null;
     	if (ring.getNumPoints() >= 1)
@@ -429,8 +429,8 @@ public class IsValidOp
   /**
    * Tests that each hole is inside the polygon shell.
    * This routine assumes that the holes have previously been tested
-   * to ensure that all vertices lie on the shell oon the same side of it
-   * (i.e that the hole rings do not cross the shell ring).
+   * to ensure that all vertices lie on the shell or on the same side of it
+   * (i.e. that the hole rings do not cross the shell ring).
    * In other words, this test is only correct if the ConsistentArea test is passed first.
    * Given this, a simple point-in-polygon test of a single point in the hole can be used,
    * provided the point is chosen such that it does not lie on the shell.
@@ -441,15 +441,18 @@ public class IsValidOp
   private void checkHolesInShell(Polygon p, GeometryGraph graph)
   {
     LinearRing shell = (LinearRing) p.getExteriorRing();
-
+    boolean isShellEmpty = shell.isEmpty();
     //PointInRing pir = new SimplePointInRing(shell);
     //PointInRing pir = new SIRtreePointInRing(shell);
-    PointInRing pir = new MCPointInRing(shell);
+    //PointInRing pir = new MCPointInRing(shell);
+    PointOnGeometryLocator pir = new IndexedPointInAreaLocator(shell);
 
     for (int i = 0; i < p.getNumInteriorRing(); i++) {
 
       LinearRing hole = (LinearRing) p.getInteriorRingN(i);
-      Coordinate holePt = findPtNotNode(hole.getCoordinates(), shell, graph);
+      Coordinate holePt = null;
+      if (hole.isEmpty()) continue;
+      holePt = findPtNotNode(hole.getCoordinates(), shell, graph);
       /**
        * If no non-node hole vertex can be found, the hole must
        * split the polygon into disconnected interiors.
@@ -457,7 +460,7 @@ public class IsValidOp
        */
       if (holePt == null) return;
 
-      boolean outside = ! pir.isInside(holePt);
+      boolean outside = isShellEmpty || (Location.EXTERIOR == pir.locate(holePt));
       if ( outside ) {
         validErr = new TopologyValidationError(
                           TopologyValidationError.HOLE_OUTSIDE_SHELL,
@@ -487,6 +490,7 @@ public class IsValidOp
 
     for (int i = 0; i < p.getNumInteriorRing(); i++) {
       LinearRing innerHole = (LinearRing) p.getInteriorRingN(i);
+      if (innerHole.isEmpty()) continue;
       nestedTester.add(innerHole);
     }
     boolean isNonNested = nestedTester.isNonNested();
@@ -537,12 +541,13 @@ public class IsValidOp
     Coordinate[] shellPts = shell.getCoordinates();
     // test if shell is inside polygon shell
     LinearRing polyShell =  (LinearRing) p.getExteriorRing();
+    if (polyShell.isEmpty()) return;
     Coordinate[] polyPts = polyShell.getCoordinates();
     Coordinate shellPt = findPtNotNode(shellPts, polyShell, graph);
     // if no point could be found, we can assume that the shell is outside the polygon
     if (shellPt == null)
       return;
-    boolean insidePolyShell = CGAlgorithms.isPointInRing(shellPt, polyPts);
+    boolean insidePolyShell = PointLocation.isInRing(shellPt, polyPts);
     if (! insidePolyShell) return;
 
     // if no holes, this is an error!
@@ -588,7 +593,7 @@ public class IsValidOp
     Coordinate shellPt = findPtNotNode(shellPts, hole, graph);
     // if point is on shell but not hole, check that the shell is inside the hole
     if (shellPt != null) {
-      boolean insideHole = CGAlgorithms.isPointInRing(shellPt, holePts);
+      boolean insideHole = PointLocation.isInRing(shellPt, holePts);
       if (! insideHole) {
         return shellPt;
       }
@@ -596,7 +601,7 @@ public class IsValidOp
     Coordinate holePt = findPtNotNode(holePts, shell, graph);
     // if point is on hole but not shell, check that the hole is outside the shell
     if (holePt != null) {
-      boolean insideShell = CGAlgorithms.isPointInRing(holePt, shellPts);
+      boolean insideShell = PointLocation.isInRing(holePt, shellPts);
       if (insideShell) {
         return holePt;
       }

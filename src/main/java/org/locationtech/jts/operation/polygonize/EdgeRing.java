@@ -1,48 +1,39 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 
 
 package org.locationtech.jts.operation.polygonize;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.algorithm.PointLocation;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateArrays;
+import org.locationtech.jts.geom.CoordinateList;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import org.locationtech.jts.io.WKTWriter;
-import org.locationtech.jts.planargraph.*;
+import org.locationtech.jts.planargraph.DirectedEdge;
 import org.locationtech.jts.util.Assert;
+
 
 /**
  * Represents a ring of {@link PolygonizeDirectedEdge}s which form
@@ -86,7 +77,7 @@ class EdgeRing {
       
       testPt = CoordinateArrays.ptNotInList(testRing.getCoordinates(), tryShellRing.getCoordinates());
       boolean isContained = false;
-      if (CGAlgorithms.isPointInRing(testPt, tryShellRing.getCoordinates()) )
+      if (PointLocation.isInRing(testPt, tryShellRing.getCoordinates()) )
         isContained = true;
 
       // check if this new containing ring is smaller than the current minimum ring
@@ -212,13 +203,13 @@ class EdgeRing {
   
   /**
    * Computes whether this ring is a hole.
-   * Due to the way the edges in the polyongization graph are linked,
+   * Due to the way the edges in the polygonization graph are linked,
    * a ring is a hole if it is oriented counter-clockwise.
    */
   public void computeHole()
   {
     LinearRing ring = getRing();
-    isHole = CGAlgorithms.isCCW(ring.getCoordinates());
+    isHole = Orientation.isCCW(ring.getCoordinates());
   }
 
   /**
@@ -289,7 +280,7 @@ class EdgeRing {
 
   /**
    * Computes the list of coordinates which are contained in this ring.
-   * The coordinatea are computed once only and cached.
+   * The coordinates are computed once only and cached.
    *
    * @return an array of the {@link Coordinate}s in this ring
    */

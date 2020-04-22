@@ -1,38 +1,19 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom;
 
-import org.locationtech.jts.algorithm.*;
+import org.locationtech.jts.algorithm.Angle;
+import org.locationtech.jts.algorithm.HCoordinate;
+import org.locationtech.jts.algorithm.Orientation;
 
 /**
  * Represents a planar triangle, and provides methods for calculating various
@@ -99,11 +80,11 @@ public class Triangle
    * all three vertices of the triangle.
    * 
    * @param a
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param b
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param c
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @return the circumcentre of the triangle
    */
   /*
@@ -133,18 +114,18 @@ public class Triangle
    * all three vertices of the triangle.
    * <p>
    * The circumcentre does not necessarily lie within the triangle. For example,
-   * the circumcentre of an obtuse isoceles triangle lies outside the triangle.
+   * the circumcentre of an obtuse isosceles triangle lies outside the triangle.
    * <p>
    * This method uses an algorithm due to J.R.Shewchuk which uses normalization
    * to the origin to improve the accuracy of computation. (See <i>Lecture Notes
    * on Geometric Robustness</i>, Jonathan Richard Shewchuk, 1999).
    * 
    * @param a
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param b
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param c
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @return the circumcentre of the triangle
    */
   public static Coordinate circumcentre(Coordinate a, Coordinate b, Coordinate c)
@@ -195,11 +176,11 @@ public class Triangle
    * The incentre always lies within the triangle.
    * 
    * @param a
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param b
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @param c
-   *          a vertx of the triangle
+   *          a vertex of the triangle
    * @return the point which is the incentre of the triangle
    */
   public static Coordinate inCentre(Coordinate a, Coordinate b, Coordinate c)
@@ -318,7 +299,7 @@ public class Triangle
    * <p>
    * The signed area value can be used to determine point orientation, but the
    * implementation in this method is susceptible to round-off errors. Use
-   * {@link CGAlgorithms#orientationIndex(Coordinate, Coordinate, Coordinate)}
+   * {@link Orientation#index(Coordinate, Coordinate, Coordinate)}
    * for robust orientation calculation.
    * 
    * @param a
@@ -329,20 +310,20 @@ public class Triangle
    *          a vertex of the triangle
    * @return the signed 2D area of the triangle
    * 
-   * @see CGAlgorithms#orientationIndex(Coordinate, Coordinate, Coordinate)
+   * @see Orientation#index(Coordinate, Coordinate, Coordinate)
    */
   public static double signedArea(Coordinate a, Coordinate b, Coordinate c)
   {
     /**
      * Uses the formula 1/2 * | u x v | where u,v are the side vectors of the
-     * triangle x is the vector cross-product For 2D vectors, this formual
+     * triangle x is the vector cross-product For 2D vectors, this formula
      * simplifies to the expression below
      */
     return ((c.x - a.x) * (b.y - a.y) - (b.x - a.x) * (c.y - a.y)) / 2;
   }
 
   /**
-   * Computes the 3D area of a triangle. The value computed is alway
+   * Computes the 3D area of a triangle. The value computed is always
    * non-negative.
    * 
    * @param a
@@ -362,11 +343,11 @@ public class Triangle
     // side vectors u and v
     double ux = b.x - a.x;
     double uy = b.y - a.y;
-    double uz = b.z - a.z;
+    double uz = b.getZ() - a.getZ();
 
     double vx = c.x - a.x;
     double vy = c.y - a.y;
-    double vz = c.z - a.z;
+    double vz = c.getZ() - a.getZ();
 
     // cross-product = u x v
     double crossx = uy * vz - uz * vy;
@@ -413,7 +394,7 @@ public class Triangle
     double dy = p.y - y0;
     double t = (d * dx - b * dy) / det;
     double u = (-c * dx + a * dy) / det;
-    double z = v0.z + t * (v1.z - v0.z) + u * (v2.z - v0.z);
+    double z = v0.getZ() + t * (v1.getZ() - v0.getZ()) + u * (v2.getZ() - v0.getZ());
     return z;
   }
 
@@ -532,12 +513,12 @@ public class Triangle
    * <p>
    * The signed area value can be used to determine point orientation, but the
    * implementation in this method is susceptible to round-off errors. Use
-   * {@link CGAlgorithms#orientationIndex(Coordinate, Coordinate, Coordinate)}
+   * {@link Orientation#index(Coordinate, Coordinate, Coordinate)}
    * for robust orientation calculation.
    * 
    * @return the signed 2D area of this triangle
    * 
-   * @see CGAlgorithms#orientationIndex(Coordinate, Coordinate, Coordinate)
+   * @see Orientation#index(Coordinate, Coordinate, Coordinate)
    */
   public double signedArea()
   {
@@ -545,7 +526,7 @@ public class Triangle
   }
 
   /**
-   * Computes the 3D area of this triangle. The value computed is alway
+   * Computes the 3D area of this triangle. The value computed is always
    * non-negative.
    * 
    * @return the 3D area of this triangle

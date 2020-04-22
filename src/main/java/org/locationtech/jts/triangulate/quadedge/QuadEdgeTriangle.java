@@ -1,48 +1,29 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 
 package org.locationtech.jts.triangulate.quadedge;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.PointLocation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineSegment;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Polygon;
+
 
 /**
  * Models a triangle formed from {@link QuadEdge}s in a {@link QuadEdgeSubdivision}
@@ -93,7 +74,7 @@ public class QuadEdgeTriangle
 	public static boolean contains(Vertex[] tri, Coordinate pt) {
 		Coordinate[] ring = new Coordinate[] { tri[0].getCoordinate(),
 				tri[1].getCoordinate(), tri[2].getCoordinate(), tri[0].getCoordinate() };
-		return CGAlgorithms.isPointInRing(pt, ring);
+		return PointLocation.isInRing(pt, ring);
 	}
 
 	/**
@@ -110,7 +91,7 @@ public class QuadEdgeTriangle
 		Coordinate[] ring = new Coordinate[] { tri[0].orig().getCoordinate(),
 				tri[1].orig().getCoordinate(), tri[2].orig().getCoordinate(),
 				tri[0].orig().getCoordinate() };
-		return CGAlgorithms.isPointInRing(pt, ring);
+		return PointLocation.isInRing(pt, ring);
 	}
 
 	public static Geometry toPolygon(Vertex[] v) {
@@ -118,7 +99,7 @@ public class QuadEdgeTriangle
 				v[1].getCoordinate(), v[2].getCoordinate(), v[0].getCoordinate() };
 		GeometryFactory fact = new GeometryFactory();
 		LinearRing ring = fact.createLinearRing(ringPts);
-		Polygon tri = fact.createPolygon(ring, null);
+		Polygon tri = fact.createPolygon(ring);
 		return tri;
 	}
 
@@ -128,7 +109,7 @@ public class QuadEdgeTriangle
 				e[0].orig().getCoordinate() };
 		GeometryFactory fact = new GeometryFactory();
 		LinearRing ring = fact.createLinearRing(ringPts);
-		Polygon tri = fact.createPolygon(ring, null);
+		Polygon tri = fact.createPolygon(ring);
 		return tri;
 	}
 
@@ -152,11 +133,11 @@ public class QuadEdgeTriangle
 	 * @param edge an array of the edges of the triangle in CCW order
 	 */
 	public QuadEdgeTriangle(QuadEdge[] edge) {
-		this.edge = (QuadEdge[]) edge.clone();
+		this.edge = (QuadEdge[]) Arrays.copyOf(edge, edge.length);
 		// link the quadedges back to this triangle
-    for (int i = 0; i < 3; i++) {
-      edge[i].setData(this);
-    }
+		for (int i = 0; i < 3; i++) {
+			edge[i].setData(this);
+		}
 	}
 
   /**
@@ -263,12 +244,12 @@ public class QuadEdgeTriangle
 
 	public boolean contains(Coordinate pt) {
 		Coordinate[] ring = getCoordinates();
-		return CGAlgorithms.isPointInRing(pt, ring);
+		return PointLocation.isInRing(pt, ring);
 	}
 
 	public Polygon getGeometry(GeometryFactory fact) {
 		LinearRing ring = fact.createLinearRing(getCoordinates());
-		Polygon tri = fact.createPolygon(ring, null);
+		Polygon tri = fact.createPolygon(ring);
 		return tri;
 	}
 

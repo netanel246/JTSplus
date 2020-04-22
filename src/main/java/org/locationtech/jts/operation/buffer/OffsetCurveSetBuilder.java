@@ -2,47 +2,44 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.buffer;
 
 /**
  * @version 1.7
  */
-import java.util.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.algorithm.*;
-import org.locationtech.jts.geomgraph.*;
-import org.locationtech.jts.noding.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.locationtech.jts.algorithm.Distance;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateArrays;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.Triangle;
+import org.locationtech.jts.geomgraph.Label;
+import org.locationtech.jts.geomgraph.Position;
+import org.locationtech.jts.noding.NodedSegmentString;
+import org.locationtech.jts.noding.SegmentString;
 
 /**
  * Creates all the raw offset curves for a buffer of a {@link Geometry}.
@@ -220,7 +217,7 @@ public class OffsetCurveSetBuilder {
     int leftLoc  = cwLeftLoc;
     int rightLoc = cwRightLoc;
     if (coord.length >= LinearRing.MINIMUM_VALID_SIZE 
-        && CGAlgorithms.isCCW(coord)) {
+        && Orientation.isCCW(coord)) {
       leftLoc = cwRightLoc;
       rightLoc = cwLeftLoc;
       side = Position.opposite(side);
@@ -241,7 +238,6 @@ public class OffsetCurveSetBuilder {
   private boolean isErodedCompletely(LinearRing ring, double bufferDistance)
   {
     Coordinate[] ringCoord = ring.getCoordinates();
-    double minDiam = 0.0;
     // degenerate ring has no area
     if (ringCoord.length < 4)
       return bufferDistance < 0;
@@ -302,7 +298,7 @@ public class OffsetCurveSetBuilder {
   {
     Triangle tri = new Triangle(triangleCoord[0], triangleCoord[1], triangleCoord[2]);
     Coordinate inCentre = tri.inCentre();
-    double distToCentre = CGAlgorithms.distancePointLine(inCentre, tri.p0, tri.p1);
+    double distToCentre = Distance.pointToSegment(inCentre, tri.p0, tri.p1);
     return distToCentre < Math.abs(bufferDistance);
   }
 

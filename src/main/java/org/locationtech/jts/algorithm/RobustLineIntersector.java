@@ -1,50 +1,28 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
 
 /**
  *@version 1.7
  */
-
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
 
 /**
  * A robust version of {@link LineIntersector}.
  *
  * @version 1.7
- * @see RobustDeterminant
  */
 public class RobustLineIntersector
     extends LineIntersector
@@ -57,8 +35,8 @@ public class RobustLineIntersector
     isProper = false;
     // do between check first, since it is faster than the orientation test
     if (Envelope.intersects(p1, p2, p)) {
-      if ((CGAlgorithms.orientationIndex(p1, p2, p) == 0)
-          && (CGAlgorithms.orientationIndex(p2, p1, p) == 0)) {
+      if ((Orientation.index(p1, p2, p) == 0)
+          && (Orientation.index(p2, p1, p) == 0)) {
         isProper = true;
         if (p.equals(p1) || p.equals(p2)) {
           isProper = false;
@@ -82,15 +60,15 @@ public class RobustLineIntersector
     // for each endpoint, compute which side of the other segment it lies
     // if both endpoints lie on the same side of the other segment,
     // the segments do not intersect
-    int Pq1 = CGAlgorithms.orientationIndex(p1, p2, q1);
-    int Pq2 = CGAlgorithms.orientationIndex(p1, p2, q2);
+    int Pq1 = Orientation.index(p1, p2, q1);
+    int Pq2 = Orientation.index(p1, p2, q2);
 
     if ((Pq1>0 && Pq2>0) || (Pq1<0 && Pq2<0)) {
       return NO_INTERSECTION;
     }
 
-    int Qp1 = CGAlgorithms.orientationIndex(q1, q2, p1);
-    int Qp2 = CGAlgorithms.orientationIndex(q1, q2, p2);
+    int Qp1 = Orientation.index(q1, q2, p1);
+    int Qp2 = Orientation.index(q1, q2, p2);
 
     if ((Qp1>0 && Qp2>0) || (Qp1<0 && Qp2<0)) {
         return NO_INTERSECTION;
@@ -457,19 +435,19 @@ public class RobustLineIntersector
       Coordinate q1, Coordinate q2)
   {
     Coordinate nearestPt = p1;
-    double minDist = CGAlgorithms.distancePointLine(p1, q1, q2);
+    double minDist = Distance.pointToSegment(p1, q1, q2);
     
-    double dist = CGAlgorithms.distancePointLine(p2, q1, q2);
+    double dist = Distance.pointToSegment(p2, q1, q2);
     if (dist < minDist) {
       minDist = dist;
       nearestPt = p2;
     }
-    dist = CGAlgorithms.distancePointLine(q1, p1, p2);
+    dist = Distance.pointToSegment(q1, p1, p2);
     if (dist < minDist) {
       minDist = dist;
       nearestPt = q1;
     }
-    dist = CGAlgorithms.distancePointLine(q2, p1, p2);
+    dist = Distance.pointToSegment(q2, p1, p2);
     if (dist < minDist) {
       minDist = dist;
       nearestPt = q2;

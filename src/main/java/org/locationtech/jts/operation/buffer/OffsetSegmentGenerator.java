@@ -1,42 +1,21 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Martin Davis.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.buffer;
 
 import org.locationtech.jts.algorithm.Angle;
-import org.locationtech.jts.algorithm.CGAlgorithms;
 import org.locationtech.jts.algorithm.HCoordinate;
 import org.locationtech.jts.algorithm.LineIntersector;
 import org.locationtech.jts.algorithm.NotRepresentableException;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.algorithm.RobustLineIntersector;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineSegment;
@@ -226,10 +205,10 @@ class OffsetSegmentGenerator
     // do nothing if points are equal
     if (s1.equals(s2)) return;
 
-    int orientation = CGAlgorithms.computeOrientation(s0, s1, s2);
+    int orientation = Orientation.index(s0, s1, s2);
     boolean outsideTurn =
-          (orientation == CGAlgorithms.CLOCKWISE        && side == Position.LEFT)
-      ||  (orientation == CGAlgorithms.COUNTERCLOCKWISE && side == Position.RIGHT);
+          (orientation == Orientation.CLOCKWISE        && side == Position.LEFT)
+      ||  (orientation == Orientation.COUNTERCLOCKWISE && side == Position.RIGHT);
 
     if (orientation == 0) { // lines are collinear
       addCollinear(addStartPoint);
@@ -272,7 +251,7 @@ class OffsetSegmentGenerator
         segList.addPt(offset1.p0);
       }
       else {
-        addFillet(s1, offset0.p1, offset1.p0, CGAlgorithms.CLOCKWISE, distance);
+        addCornerFillet(s1, offset0.p1, offset1.p0, Orientation.CLOCKWISE, distance);
       }
     }
   }
@@ -307,7 +286,7 @@ class OffsetSegmentGenerator
     // add a circular fillet connecting the endpoints of the offset segments
      if (addStartPoint) segList.addPt(offset0.p1);
       // TESTING - comment out to produce beveled joins
-      addFillet(s1, offset0.p1, offset1.p0, orientation, distance);
+      addCornerFillet(s1, offset0.p1, offset1.p0, orientation, distance);
       segList.addPt(offset1.p0);
     }
   }
@@ -436,7 +415,7 @@ class OffsetSegmentGenerator
       case BufferParameters.CAP_ROUND:
         // add offset seg points with a fillet between them
         segList.addPt(offsetL.p1);
-        addFillet(p1, angle + Math.PI / 2, angle - Math.PI / 2, CGAlgorithms.CLOCKWISE, distance);
+        addDirectedFillet(p1, angle + Math.PI / 2, angle - Math.PI / 2, Orientation.CLOCKWISE, distance);
         segList.addPt(offsetR.p1);
         break;
       case BufferParameters.CAP_FLAT:
@@ -480,7 +459,7 @@ class OffsetSegmentGenerator
   
     /**
      * This computation is unstable if the offset segments are nearly collinear.
-     * Howver, this situation should have been eliminated earlier by the check for 
+     * However, this situation should have been eliminated earlier by the check for
      * whether the offset segment endpoints are almost coincident
      */
     try {
@@ -525,10 +504,9 @@ class OffsetSegmentGenerator
       double mitreLimit)
   {
     Coordinate basePt = seg0.p1;
-    
+
     double ang0 = Angle.angle(basePt, seg0.p0);
-    double ang1 = Angle.angle(basePt, seg1.p1);
-    
+
     // oriented angle between segments
     double angDiff = Angle.angleBetweenOriented(seg0.p0, basePt, seg1.p1);
     // half of the interior angle
@@ -595,7 +573,7 @@ class OffsetSegmentGenerator
    * @param direction the orientation of the fillet
    * @param radius the radius of the fillet
    */
-  private void addFillet(Coordinate p, Coordinate p0, Coordinate p1, int direction, double radius)
+  private void addCornerFillet(Coordinate p, Coordinate p0, Coordinate p1, int direction, double radius)
   {
     double dx0 = p0.x - p.x;
     double dy0 = p0.y - p.y;
@@ -604,14 +582,14 @@ class OffsetSegmentGenerator
     double dy1 = p1.y - p.y;
     double endAngle = Math.atan2(dy1, dx1);
 
-    if (direction == CGAlgorithms.CLOCKWISE) {
+    if (direction == Orientation.CLOCKWISE) {
       if (startAngle <= endAngle) startAngle += 2.0 * Math.PI;
     }
     else {    // direction == COUNTERCLOCKWISE
       if (startAngle >= endAngle) startAngle -= 2.0 * Math.PI;
     }
     segList.addPt(p0);
-    addFillet(p, startAngle, endAngle, direction, radius);
+    addDirectedFillet(p, startAngle, endAngle, direction, radius);
     segList.addPt(p1);
   }
 
@@ -624,9 +602,9 @@ class OffsetSegmentGenerator
    * @param direction is -1 for a CW angle, 1 for a CCW angle
    * @param radius the radius of the fillet
    */
-  private void addFillet(Coordinate p, double startAngle, double endAngle, int direction, double radius)
+  private void addDirectedFillet(Coordinate p, double startAngle, double endAngle, int direction, double radius)
   {
-    int directionFactor = direction == CGAlgorithms.CLOCKWISE ? -1 : 1;
+    int directionFactor = direction == Orientation.CLOCKWISE ? -1 : 1;
 
     double totalAngle = Math.abs(startAngle - endAngle);
     int nSegs = (int) (totalAngle / filletAngleQuantum + 0.5);
@@ -659,7 +637,7 @@ class OffsetSegmentGenerator
     // add start point
     Coordinate pt = new Coordinate(p.x + distance, p.y);
     segList.addPt(pt);
-    addFillet(p, 0.0, 2.0 * Math.PI, -1, distance);
+    addDirectedFillet(p, 0.0, 2.0 * Math.PI, -1, distance);
     segList.closeRing();
   }
 

@@ -1,44 +1,28 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.buffer;
 
 /**
  * @version 1.7
  */
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.math.MathUtil;
-import org.locationtech.jts.noding.*;
-import org.locationtech.jts.noding.snapround.*;
+import org.locationtech.jts.noding.Noder;
+import org.locationtech.jts.noding.ScaledNoder;
+import org.locationtech.jts.noding.snapround.MCIndexSnapRounder;
 
 //import debug.*;
 
@@ -48,7 +32,7 @@ import org.locationtech.jts.noding.snapround.*;
  * In GIS, the positive (or negative) buffer of a geometry is defined as
  * the Minkowski sum (or difference) of the geometry
  * with a circle of radius equal to the absolute value of the buffer distance.
- * In the CAD/CAM world buffers are known as </i>offset curves</i>.
+ * In the CAD/CAM world buffers are known as <i>offset curves</i>.
  * In morphological analysis the 
  * operation of positive and negative buffering 
  * is referred to as <i>erosion</i> and <i>dilation</i>
@@ -64,15 +48,15 @@ import org.locationtech.jts.noding.snapround.*;
  * <p>
  * The <b>end cap style</b> of a linear buffer may be {@link BufferParameters#setEndCapStyle(int) specified}. The
  * following end cap styles are supported:
- * <ul
+ * <ul>
  * <li>{@link BufferParameters#CAP_ROUND} - the usual round end caps
- * <li>{@link BufferParameters#CAP_BUTT} - end caps are truncated flat at the line ends
+ * <li>{@link BufferParameters#CAP_FLAT} - end caps are truncated flat at the line ends
  * <li>{@link BufferParameters#CAP_SQUARE} - end caps are squared off at the buffer distance beyond the line ends
  * </ul>
  * <p>
  * The <b>join style</b> of the corners in a buffer may be {@link BufferParameters#setJoinStyle(int) specified}. The
  * following join styles are supported:
- * <ul
+ * <ul>
  * <li>{@link BufferParameters#JOIN_ROUND} - the usual round join
  * <li>{@link BufferParameters#JOIN_MITRE} - corners are "sharp" (up to a {@link BufferParameters#getMitreLimit() distance limit})
  * <li>{@link BufferParameters#JOIN_BEVEL} - corners are beveled (clipped off).
@@ -196,7 +180,7 @@ public class BufferOp
   }
 
   /**
-   * Comutes the buffer for a geometry for a given buffer distance
+   * Computes the buffer for a geometry for a given buffer distance
    * and accuracy of approximation.
    *
    * @param g the geometry to buffer
@@ -213,7 +197,7 @@ public class BufferOp
   }
   
   /**
-   * Comutes the buffer for a geometry for a given buffer distance
+   * Computes the buffer for a geometry for a given buffer distance
    * and accuracy of approximation.
    *
    * @param g the geometry to buffer
@@ -231,7 +215,7 @@ public class BufferOp
   }
 
   /**
-   * Comutes the buffer for a geometry for a given buffer distance
+   * Computes the buffer for a geometry for a given buffer distance
    * and accuracy of approximation.
    *
    * @param g the geometry to buffer
@@ -284,7 +268,7 @@ public class BufferOp
 
   /**
    * Specifies the end cap style of the generated buffer.
-   * The styles supported are {@link BufferParameters#CAP_ROUND}, {@link BufferParameters##CAP_BUTT}, and {@link BufferParameters##CAP_SQUARE}.
+   * The styles supported are {@link BufferParameters#CAP_ROUND}, {@link BufferParameters#CAP_FLAT}, and {@link BufferParameters#CAP_SQUARE}.
    * The default is CAP_ROUND.
    *
    * @param endCapStyle the end cap style to specify

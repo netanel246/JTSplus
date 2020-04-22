@@ -1,45 +1,29 @@
 
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.overlay;
 
-import java.util.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.geomgraph.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geomgraph.DirectedEdge;
+import org.locationtech.jts.geomgraph.DirectedEdgeStar;
+import org.locationtech.jts.geomgraph.EdgeRing;
+import org.locationtech.jts.geomgraph.Node;
 
 /**
- * A ring of {@link DirectedEdge}s which may contain nodes of degree > 2.
+ * A ring of {@link DirectedEdge}s which may contain nodes of degree &gt; 2.
  * A <tt>MaximalEdgeRing</tt> may represent two different spatial entities:
  * <ul>
  * <li>a single polygon possibly containing inversions (if the ring is oriented CW)
@@ -54,7 +38,7 @@ import org.locationtech.jts.geomgraph.*;
  * {@link #buildMinimalRings() } method.
  *
  * @version 1.7
- * @see org.locationtech.jts.operation.overlay.MinimalEdgeRing
+ * @see MinimalEdgeRing
  */
 public class MaximalEdgeRing
   extends EdgeRing

@@ -1,63 +1,48 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 package org.locationtech.jts.geom.impl;
 
-import org.locationtech.jts.geom.*;
+import java.io.Serializable;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.CoordinateSequenceFactory;
+import org.locationtech.jts.geom.Coordinates;
 
 /**
  * Builds packed array coordinate sequences. The array data type can be either
  * double or float, and defaults to float.
  */
 public class PackedCoordinateSequenceFactory implements
-    CoordinateSequenceFactory
+    CoordinateSequenceFactory, Serializable
 {
+  private static final long serialVersionUID = -3558264771905224525L;
+  
   public static final int DOUBLE = 0;
   public static final int FLOAT = 1;
 
   public static final PackedCoordinateSequenceFactory DOUBLE_FACTORY =
       new PackedCoordinateSequenceFactory(DOUBLE);
+  
   public static final PackedCoordinateSequenceFactory FLOAT_FACTORY =
       new PackedCoordinateSequenceFactory(FLOAT);
 
   private int type = DOUBLE;
-  private int dimension = 3;
 
   /**
    * Creates a new PackedCoordinateSequenceFactory
    * of type DOUBLE.
    */
-  public PackedCoordinateSequenceFactory()
-  {
+  public PackedCoordinateSequenceFactory(){
     this(DOUBLE);
   }
 
@@ -68,21 +53,8 @@ public class PackedCoordinateSequenceFactory implements
    * {@linkplain PackedCoordinateSequenceFactory#Float}or
    * {@linkplain PackedCoordinateSequenceFactory#Double}
    */
-  public PackedCoordinateSequenceFactory(int type)
-  {
-    this(type, 3);
-  }
-  /**
-   * Creates a new PackedCoordinateSequenceFactory
-   * of the given type.
-   * Acceptable type values are
-   * {@linkplain PackedCoordinateSequenceFactory#FLOAT}or
-   * {@linkplain PackedCoordinateSequenceFactory#DOUBLE}
-   */
-  public PackedCoordinateSequenceFactory(int type, int dimension)
-  {
-    setType(type);
-    setDimension(dimension);
+  public PackedCoordinateSequenceFactory(int type){
+    this.type = type;
   }
 
   /**
@@ -95,75 +67,106 @@ public class PackedCoordinateSequenceFactory implements
   }
 
   /**
-   * Sets the type of packed coordinate sequences this factory builds,
-   * acceptable values are {@linkplain PackedCoordinateSequenceFactory#Float}or
-   * {@linkplain PackedCoordinateSequenceFactory#Double}
-   */
-  public void setType(int type) {
-    if (type != DOUBLE && type != FLOAT)
-      throw new IllegalArgumentException("Unknown type " + type);
-    this.type = type;
-  }
-
-
-  public int getDimension() { return dimension; }
-
-  public void setDimension(int dimension) { this.dimension = dimension; }
-
-  /**
-   * @see org.locationtech.jts.geom.CoordinateSequenceFactory#create(org.locationtech.jts.geom.Coordinate[])
+   * @see CoordinateSequenceFactory#create(Coordinate[])
    */
   public CoordinateSequence create(Coordinate[] coordinates) {
+    int dimension = 3;
+    int measures = 0;
+    if (coordinates != null && coordinates.length > 1 && coordinates[0] != null) {
+      Coordinate first = coordinates[0];
+      dimension = Coordinates.dimension(first);
+      measures = Coordinates.measures(first);
+    }
     if (type == DOUBLE) {
-      return new PackedCoordinateSequence.Double(coordinates, dimension);
+      return new PackedCoordinateSequence.Double(coordinates, dimension, measures);
     } else {
-      return new PackedCoordinateSequence.Float(coordinates, dimension);
+      return new PackedCoordinateSequence.Float(coordinates,  dimension, measures);
     }
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequenceFactory#create(org.locationtech.jts.geom.CoordinateSequence)
+   * @see CoordinateSequenceFactory#create(CoordinateSequence)
    */
   public CoordinateSequence create(CoordinateSequence coordSeq) {
+    int dimension = coordSeq.getDimension();
+    int measures = coordSeq.getMeasures();
     if (type == DOUBLE) {
-      return new PackedCoordinateSequence.Double(coordSeq.toCoordinateArray(), dimension);
+      return new PackedCoordinateSequence.Double(coordSeq.toCoordinateArray(), dimension, measures);
     } else {
-      return new PackedCoordinateSequence.Float(coordSeq.toCoordinateArray(), dimension);
+      return new PackedCoordinateSequence.Float(coordSeq.toCoordinateArray(), dimension, measures);
     }
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequenceFactory#create(double[],
-   *      int)
+   * Create a packed coordinate sequence from the provided array. 
+   * 
+   * @param packedCoordinates 
+   * @param dimension
+   * @return Packaged coordinate seqeunce of the requested type
    */
   public CoordinateSequence create(double[] packedCoordinates, int dimension) {
+    return create( packedCoordinates, dimension, 0 );
+  }
+  
+  /**
+   * Create a packed coordinate sequence from the provided array. 
+   * 
+   * @param packedCoordinates 
+   * @param dimension
+   * @param measures
+   * @return Packaged coordinate seqeunce of the requested type
+   */
+  public CoordinateSequence create(double[] packedCoordinates, int dimension, int measures) {
     if (type == DOUBLE) {
-      return new PackedCoordinateSequence.Double(packedCoordinates, dimension);
+      return new PackedCoordinateSequence.Double(packedCoordinates, dimension, measures);
     } else {
-      return new PackedCoordinateSequence.Float(packedCoordinates, dimension);
+      return new PackedCoordinateSequence.Float(packedCoordinates, dimension, measures);
     }
   }
-
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequenceFactory#create(float[],
-   *      int)
+   * Create a packed coordinate sequence from the provided array. 
+   * 
+   * @param packedCoordinates 
+   * @param dimension
+   * @return Packaged coordinate seqeunce of the requested type
    */
   public CoordinateSequence create(float[] packedCoordinates, int dimension) {
+    return create( packedCoordinates, dimension, 0 );
+  }
+  
+  /**
+   * @param packedCoordinates
+   * @param dimension
+   * @param measures
+   * @return Packaged coordinate seqeunce of the requested type
+   */
+  public CoordinateSequence create(float[] packedCoordinates, int dimension, int measures) {
     if (type == DOUBLE) {
-      return new PackedCoordinateSequence.Double(packedCoordinates, dimension);
+      return new PackedCoordinateSequence.Double(packedCoordinates, dimension, measures);
     } else {
-      return new PackedCoordinateSequence.Float(packedCoordinates, dimension);
+      return new PackedCoordinateSequence.Float(packedCoordinates, dimension, measures);
     }
   }
 
   /**
-   * @see org.locationtech.jts.geom.CoordinateSequenceFactory#create(int, int)
+   * @see CoordinateSequenceFactory#create(int, int)
    */
   public CoordinateSequence create(int size, int dimension) {
     if (type == DOUBLE) {
-      return new PackedCoordinateSequence.Double(size, dimension);
+      return new PackedCoordinateSequence.Double(size, dimension, 0);
     } else {
-      return new PackedCoordinateSequence.Float(size, dimension);
+      return new PackedCoordinateSequence.Float(size, dimension, 0 );
+    }
+  }
+  
+  /**
+   * @see CoordinateSequenceFactory#create(int, int, int)
+   */
+  public CoordinateSequence create(int size, int dimension, int measures) {
+    if (type == DOUBLE) {
+      return new PackedCoordinateSequence.Double(size, dimension, measures);
+    } else {
+      return new PackedCoordinateSequence.Float(size, dimension, measures);
     }
   }
 }

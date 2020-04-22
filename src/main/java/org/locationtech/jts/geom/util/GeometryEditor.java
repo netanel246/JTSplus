@@ -1,42 +1,33 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.geom.util;
 
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.Assert;
 
 import java.util.ArrayList;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.Assert;
 
 
 /**
@@ -56,7 +47,7 @@ import java.util.ArrayList;
  *     The editor does not check whether changing coordinate values makes the result Geometry invalid
  * <li>the coordinate lists may be changed
  *     (e.g. by adding, deleting or modifying coordinates).
- *     The modifed coordinate lists must be consistent with their original parent component
+ *     The modified coordinate lists must be consistent with their original parent component
  *     (e.g. a <tt>LinearRing</tt> must always have at least 4 coordinates, and the first and last
  *     coordinate must be equal)
  * <li>components of the original geometry may be deleted
@@ -178,7 +169,7 @@ public class GeometryEditor
     Polygon newPolygon = (Polygon) operation.edit(polygon, factory);
     // create one if needed
     if (newPolygon == null)
-      newPolygon = factory.createPolygon((CoordinateSequence) null);
+      newPolygon = factory.createPolygon();
     if (newPolygon.isEmpty()) {
       //RemoveSelectedPlugIn relies on this behaviour. [Jon Aquino]
       return newPolygon;
@@ -187,7 +178,7 @@ public class GeometryEditor
     LinearRing shell = (LinearRing) edit(newPolygon.getExteriorRing(), operation);
     if (shell == null || shell.isEmpty()) {
       //RemoveSelectedPlugIn relies on this behaviour. [Jon Aquino]
-      return factory.createPolygon(null, null);
+      return factory.createPolygon();
     }
 
     ArrayList holes = new ArrayList();
@@ -247,9 +238,10 @@ public class GeometryEditor
      * Edits a Geometry by returning a new Geometry with a modification.
      * The returned geometry may be:
      * <ul>
-     * <li>the input geometry itself
+     * <li>the input geometry itself.
      * The returned Geometry might be the same as the Geometry passed in.
-     * It may be <code>null</code> if the geometry is to be deleted.
+     * <li><code>null</code> if the geometry is to be deleted.
+     * </ul>
      *
      * @param geometry the Geometry to modify
      * @param factory the factory with which to construct the modified Geometry
@@ -355,7 +347,7 @@ public class GeometryEditor
     /**
      * Edits a {@link CoordinateSequence} from a {@link Geometry}.
      *
-     * @param coordseq the coordinate array to operate on
+     * @param coordSeq the coordinate array to operate on
      * @param geometry the geometry containing the coordinate list
      * @return an edited coordinate sequence (which may be the same as the input)
      */

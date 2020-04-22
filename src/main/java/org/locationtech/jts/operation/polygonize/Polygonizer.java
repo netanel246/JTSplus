@@ -1,35 +1,14 @@
 
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.polygonize;
 
@@ -44,6 +23,7 @@ import org.locationtech.jts.geom.GeometryComponentFilter;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
+
 
 /**
  * Polygonizes a set of {@link Geometry}s which contain linework that
@@ -74,17 +54,23 @@ public class Polygonizer
   /**
    * Adds every linear element in a {@link Geometry} into the polygonizer graph.
    */
-  private class LineStringAdder
+  private static class LineStringAdder
       implements GeometryComponentFilter
   {
+    Polygonizer p;
+    
+    LineStringAdder(Polygonizer p) {
+      this.p = p;
+    }
+    
     public void filter(Geometry g) {
       if (g instanceof LineString)
-        add((LineString) g);
+        p.add((LineString) g);
     }
   }
 
   // default factory
-  private LineStringAdder lineStringAdder = new LineStringAdder();
+  private LineStringAdder lineStringAdder = new LineStringAdder(this);
 
   protected PolygonizeGraph graph;
   // initialize with empty collections, in case nothing is computed
@@ -112,7 +98,7 @@ public class Polygonizer
   }
   
   /**
-   * Creates a polygonizer and allow specifyng if only polygons which form a valid polygonal geometry are to be extracted.
+   * Creates a polygonizer and allow specifying if only polygons which form a valid polygonal geometry are to be extracted.
    * 
    * @param extractOnlyPolygonal true if only polygons which form a valid polygonal geometry are to be extracted
    */
@@ -169,7 +155,7 @@ public class Polygonizer
    * Allows disabling the valid ring checking, 
    * to optimize situations where invalid rings are not expected.
    * <p>
-   * The default is <code>true</code.
+   * The default is <code>true</code>.
    * 
    * @param isCheckingRingsValid true if generated rings should be checked for validity
    */
@@ -190,7 +176,7 @@ public class Polygonizer
 
   /**
    * Gets a geometry representing the polygons formed by the polygonization.
-   * If a valid polygonal geometry was extracted the result is a {@linkl Polygonal} geometry. 
+   * If a valid polygonal geometry was extracted the result is a {@link Polygonal} geometry.
    * 
    * @return a geometry containing the polygons
    */
@@ -344,7 +330,7 @@ public class Polygonizer
 
   /**
    * For each outer hole finds and includes a single outer shell.
-   * This seeds the travesal algorithm for finding only polygonal shells.
+   * This seeds the traversal algorithm for finding only polygonal shells.
    *  
    * @param shellList the list of shell EdgeRings
    */

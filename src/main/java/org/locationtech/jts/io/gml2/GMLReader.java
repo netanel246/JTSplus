@@ -1,68 +1,56 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.io.gml2;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 
-import javax.xml.parsers.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.locationtech.jts.geom.*;
 
 /**
  * Reads a GML2 geometry from an XML fragment into a {@link Geometry}.
  * <p>
  * An example of the GML2 format handled is:
  * <pre>
- *   <LineString>
- *  	<coordinates>24824.045318333192,38536.15071012041
+ *   &lt;LineString&gt;
+ *  	&lt;coordinates&gt;
+ *  		24824.045318333192,38536.15071012041
  *  		26157.378651666528,37567.42733944659 26666.666,36000.0
  *  		26157.378651666528,34432.57266055341
  *  		24824.045318333192,33463.84928987959
  *  		23175.954681666804,33463.84928987959
  *  		21842.621348333472,34432.57266055341 21333.333,36000.0
  *  		21842.621348333472,37567.42733944659
- *  		23175.954681666808,38536.15071012041 </coordinates>
- *  </LineString>
+ *  		23175.954681666808,38536.15071012041
+ *  	&lt;/coordinates&gt;
+ *  &lt;/LineString&gt;
  * </pre>
  *
  * The reader ignores namespace prefixes, 
  * and disables both the validation and namespace options on the <tt>SAXParser</tt>.
  * This class requires the presence of a SAX Parser available via the 
- * {@link javax.xml.parsers.SAXParserFactory#newInstance()}
+ * {@link SAXParserFactory#newInstance()}
  * method.
  * <p>
  * A specification of the GML XML format 

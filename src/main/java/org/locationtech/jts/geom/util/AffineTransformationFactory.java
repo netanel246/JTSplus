@@ -1,35 +1,14 @@
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
-*/
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 
 package org.locationtech.jts.geom.util;
 
@@ -45,7 +24,7 @@ import org.locationtech.jts.geom.Coordinate;
  */
 public class AffineTransformationFactory {
 	/**
-	 * Creates a tranformation from a set of three control vectors. A control
+	 * Creates a transformation from a set of three control vectors. A control
 	 * vector consists of a source point and a destination point, which is the
 	 * image of the source point under the desired transformation. Three control
 	 * vectors allows defining a fully general affine transformation.
@@ -78,8 +57,7 @@ public class AffineTransformationFactory {
 	 * @param src1
 	 * @param dest0
 	 * @param dest1
-	 * @return the computed transformation
-   * @return null if the control vectors do not determine a well-defined transformation
+	 * @return the computed transformation, or null if the control vectors do not determine a well-defined transformation
 	 */
 	public static AffineTransformation createFromControlVectors(Coordinate src0,
 			Coordinate src1, Coordinate dest0, Coordinate dest1) {
@@ -155,7 +133,7 @@ public class AffineTransformationFactory {
 	}
 
 	/**
-	 * Creates an AffineTransformation defined by a maping between two baselines. 
+	 * Creates an AffineTransformation defined by a mapping between two baselines.
 	 * The computed transformation consists of:
 	 * <ul>
 	 * <li>a translation 

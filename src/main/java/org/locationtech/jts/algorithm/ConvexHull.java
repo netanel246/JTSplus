@@ -1,42 +1,35 @@
 
 
 /*
-* The JTS Topology Suite is a collection of Java classes that
-* implement the fundamental operations required to validate a given
-* geo-spatial data set to a known topological specification.
-*
-* Copyright (C) 2001 Vivid Solutions
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* For more information, contact:
-*
-*     Vivid Solutions
-*     Suite #1A
-*     2328 Government Street
-*     Victoria BC  V8T 5G5
-*     Canada
-*
-*     (250)385-6040
-*     www.vividsolutions.com
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.algorithm;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.util.Assert;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Stack;
+import java.util.TreeSet;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateArrays;
+import org.locationtech.jts.geom.CoordinateList;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.Assert;
 import org.locationtech.jts.util.UniqueCoordinateArrayFilter;
 
 /**
@@ -92,7 +85,7 @@ public class ConvexHull
   public Geometry getConvexHull() {
 
     if (inputPts.length == 0) {
-      return geomFactory.createGeometryCollection(null);
+      return geomFactory.createGeometryCollection();
     }
     if (inputPts.length == 1) {
       return geomFactory.createPoint(inputPts[0]);
@@ -176,7 +169,7 @@ public class ConvexHull
      * are forced to be in the reduced set.
      */
     for (int i = 0; i < inputPts.length; i++) {
-      if (! CGAlgorithms.isPointInRing(inputPts[i], polyPts)) {
+      if (! PointLocation.isInRing(inputPts[i], polyPts)) {
         reducedSet.add(inputPts[i]);
       }
     }
@@ -231,21 +224,21 @@ public class ConvexHull
   private Stack grahamScan(Coordinate[] c) {
     Coordinate p;
     Stack ps = new Stack();
-    p = (Coordinate) ps.push(c[0]);
-    p = (Coordinate) ps.push(c[1]);
-    p = (Coordinate) ps.push(c[2]);
+    ps.push(c[0]);
+    ps.push(c[1]);
+    ps.push(c[2]);
     for (int i = 3; i < c.length; i++) {
       p = (Coordinate) ps.pop();
       // check for empty stack to guard against robustness problems
       while (
           ! ps.empty() && 
-          CGAlgorithms.computeOrientation((Coordinate) ps.peek(), p, c[i]) > 0) {
+          Orientation.index((Coordinate) ps.peek(), p, c[i]) > 0) {
         p = (Coordinate) ps.pop();
       }
-      p = (Coordinate) ps.push(p);
-      p = (Coordinate) ps.push(c[i]);
+      ps.push(p);
+      ps.push(c[i]);
     }
-    p = (Coordinate) ps.push(c[0]);
+    ps.push(c[0]);
     return ps;
   }
 
@@ -254,7 +247,7 @@ public class ConvexHull
    *      c1 and c3 inclusive
    */
   private boolean isBetween(Coordinate c1, Coordinate c2, Coordinate c3) {
-    if (CGAlgorithms.computeOrientation(c1, c2, c3) != 0) {
+    if (Orientation.index(c1, c2, c3) != 0) {
       return false;
     }
     if (c1.x != c3.x) {
@@ -401,7 +394,7 @@ public class ConvexHull
 //          geometry.getPrecisionModel(), geometry.getSRID());
     }
     LinearRing linearRing = geomFactory.createLinearRing(coordinates);
-    return geomFactory.createPolygon(linearRing, null);
+    return geomFactory.createPolygon(linearRing);
   }
 
   /**
@@ -495,10 +488,10 @@ public class ConvexHull
       if (result !=  0) return result;
       //*/
 
-      int orient = CGAlgorithms.computeOrientation(o, p, q);
+      int orient = Orientation.index(o, p, q);
 
-      if (orient == CGAlgorithms.COUNTERCLOCKWISE) return 1;
-      if (orient == CGAlgorithms.CLOCKWISE) return -1;
+      if (orient == Orientation.COUNTERCLOCKWISE) return 1;
+      if (orient == Orientation.CLOCKWISE) return -1;
 
       // points are collinear - check distance
       double op = dxp * dxp + dyp * dyp;

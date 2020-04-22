@@ -1,39 +1,20 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.buffer;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.algorithm.Distance;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateList;
 
 /**
  * Simplifies a buffer input line to 
@@ -94,7 +75,7 @@ public class BufferInputLineSimplifier
   private Coordinate[] inputLine;
   private double distanceTol;
   private byte[] isDeleted;
-  private int angleOrientation = CGAlgorithms.COUNTERCLOCKWISE;
+  private int angleOrientation = Orientation.COUNTERCLOCKWISE;
   
   public BufferInputLineSimplifier(Coordinate[] inputLine) {
     this.inputLine = inputLine;
@@ -114,7 +95,7 @@ public class BufferInputLineSimplifier
   {
     this.distanceTol = Math.abs(distanceTol);
     if (distanceTol < 0)
-      angleOrientation = CGAlgorithms.CLOCKWISE;
+      angleOrientation = Orientation.CLOCKWISE;
     
     // rely on fact that boolean array is filled with false value
     isDeleted = new byte[inputLine.length];
@@ -140,8 +121,7 @@ public class BufferInputLineSimplifier
      * This ensures that end caps are generated consistently.
      */
     int index = 1;
-    int maxIndex = inputLine.length - 1;
-    
+
     int midIndex = findNextNonDeletedIndex(index);
     int lastIndex = findNextNonDeletedIndex(midIndex);
     
@@ -209,12 +189,12 @@ public class BufferInputLineSimplifier
 
   private boolean isShallowConcavity(Coordinate p0, Coordinate p1, Coordinate p2, double distanceTol)
   {
-    int orientation = CGAlgorithms.computeOrientation(p0, p1, p2);
+    int orientation = Orientation.index(p0, p1, p2);
     boolean isAngleToSimplify = (orientation == angleOrientation);
     if (! isAngleToSimplify)
       return false;
     
-    double dist = CGAlgorithms.distancePointLine(p1, p0, p2);
+    double dist = Distance.pointToSegment(p1, p0, p2);
     return dist < distanceTol;
   }
   
@@ -222,7 +202,7 @@ public class BufferInputLineSimplifier
   
   /**
    * Checks for shallowness over a sample of points in the given section.
-   * This helps prevents the siplification from incrementally  
+   * This helps prevents the simplification from incrementally
    * "skipping" over points which are in fact non-shallow.
    * 
    * @param p0 start coordinate of section
@@ -246,14 +226,14 @@ public class BufferInputLineSimplifier
   
   private boolean isShallow(Coordinate p0, Coordinate p1, Coordinate p2, double distanceTol)
   {
-    double dist = CGAlgorithms.distancePointLine(p1, p0, p2);
+    double dist = Distance.pointToSegment(p1, p0, p2);
     return dist < distanceTol;
   }
   
   
   private boolean isConcave(Coordinate p0, Coordinate p1, Coordinate p2)
   {
-    int orientation = CGAlgorithms.computeOrientation(p0, p1, p2);
+    int orientation = Orientation.index(p0, p1, p2);
     boolean isConcave = (orientation == angleOrientation);
     return isConcave;
   }

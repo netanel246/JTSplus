@@ -1,41 +1,30 @@
 /*
- * The JTS Topology Suite is a collection of Java classes that
- * implement the fundamental operations required to validate a given
- * geo-spatial data set to a known topological specification.
+ * Copyright (c) 2016 Vivid Solutions.
  *
- * Copyright (C) 2001 Vivid Solutions
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * For more information, contact:
- *
- *     Vivid Solutions
- *     Suite #1A
- *     2328 Government Street
- *     Victoria BC  V8T 5G5
- *     Canada
- *
- *     (250)385-6040
- *     www.vividsolutions.com
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
 package org.locationtech.jts.operation.distance;
 
-import java.util.*;
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.geom.util.*;
-import org.locationtech.jts.algorithm.*;
+import java.util.List;
+
+import org.locationtech.jts.algorithm.Distance;
+import org.locationtech.jts.algorithm.PointLocator;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.LineSegment;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.util.LinearComponentExtracter;
+import org.locationtech.jts.geom.util.PointExtracter;
+import org.locationtech.jts.geom.util.PolygonExtracter;
 
 /**
  * Find two points on two {@link Geometry}s which lie
@@ -74,7 +63,7 @@ public class DistanceOp
    * @param g0 a {@link Geometry}
    * @param g1 another {@link Geometry}
    * @param distance the distance to test
-   * @return true if g0.distance(g1) <= distance
+   * @return true if g0.distance(g1) &lt;= distance
    */
   public static boolean isWithinDistance(Geometry g0, Geometry g1, double distance)
   {
@@ -248,8 +237,12 @@ public class DistanceOp
   
   private void computeContainmentDistance(int polyGeomIndex, GeometryLocation[] locPtPoly)
   {
+    Geometry polyGeom = geom[polyGeomIndex];
+    // if no polygon then nothing to do
+    if (polyGeom.getDimension() < 2) return;
+    
   	int locationsIndex = 1 - polyGeomIndex;
-    List polys = PolygonExtracter.getPolygons(geom[polyGeomIndex]);
+    List polys = PolygonExtracter.getPolygons(polyGeom);
     if (polys.size() > 0) {
       List insideLocs = ConnectedElementLocationFilter.getLocations(geom[locationsIndex]);
       computeContainmentDistance(insideLocs, polys, locPtPoly);
@@ -382,7 +375,7 @@ public class DistanceOp
       // brute force approach!
     for (int i = 0; i < coord0.length - 1; i++) {
       for (int j = 0; j < coord1.length - 1; j++) {
-        double dist = CGAlgorithms.distanceLineLine(
+        double dist = Distance.segmentToSegment(
                                         coord0[i], coord0[i + 1],
                                         coord1[j], coord1[j + 1] );
         if (dist < minDistance) {
@@ -408,7 +401,7 @@ public class DistanceOp
     Coordinate coord = pt.getCoordinate();
       // brute force approach!
     for (int i = 0; i < coord0.length - 1; i++) {
-        double dist = CGAlgorithms.distancePointLine(
+        double dist = Distance.pointToSegment(
             coord, coord0[i], coord0[i + 1] );
         if (dist < minDistance) {
           minDistance = dist;
